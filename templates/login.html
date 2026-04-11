@@ -3,9 +3,16 @@
 <head>
 <title>Login 🎧</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
 <style>
+*{
+    box-sizing:border-box;
+    transition:0.3s;
+}
+
 body{
     font-family:'Poppins',sans-serif;
     background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
@@ -64,7 +71,7 @@ button{
     color:white;
     cursor:pointer;
 }
-background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4')
+
 button:hover{
     background:#1ed760;
 }
@@ -78,6 +85,22 @@ p{
 a{
     color:#1db954;
     text-decoration:none;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+    .container{
+        flex-direction:column;
+    }
+
+    .image-box{
+        width:100%;
+        height:180px;
+    }
+
+    .login-box{
+        width:100%;
+    }
 }
 </style>
 
@@ -94,10 +117,18 @@ a{
     <div class="login-box">
         <h2>🎧 Welcome Back</h2>
 
-        <form method="POST">
-            <input type="text" name="username" placeholder="Username" required>
-            <input type="password" name="password" placeholder="Password" required>
+        <!-- FORM FIXED -->
+        <form method="POST" autocomplete="off">
+
+            <input type="text" name="username" placeholder="Username" autocomplete="off" required>
+
+            <!-- Hidden trick to disable popup -->
+            <input type="password" style="display:none">
+
+            <input type="password" name="passcode" placeholder="Password" autocomplete="new-password" required>
+
             <button>Login</button>
+
         </form>
 
         <p>New user? <a href="/register">Register</a></p>
