@@ -3,96 +3,37 @@
 <head>
 <title>Music Recommender 🎵</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-<script>
-// SEARCH
-async function searchSongs(){
-    let query = document.getElementById("songInput").value;
-    if(query.length < 1){
-        document.getElementById("suggestions").innerHTML = "";
-        return;
-    }
-
-    let res = await fetch(`/search?q=${query}`);
-    let data = await res.json();
-
-    let list = document.getElementById("suggestions");
-    list.innerHTML = "";
-
-    data.forEach(song=>{
-        let li=document.createElement("li");
-        li.innerText=song;
-        li.onclick=()=>{
-            document.getElementById("songInput").value=song;
-            list.innerHTML="";
-        };
-        list.appendChild(li);
-    });
-}
-
-// LIKE
-function likeSong(song){
-    fetch('/like',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:song})
-    }).then(()=>alert("❤️ Liked!"));
-}
-
-// GLOBAL PLAYER
-function playSong(preview, name, artist){
-    let player = document.getElementById("player");
-    let now = document.getElementById("nowPlaying");
-
-    if(preview){
-        player.src = preview;
-        player.play();
-        now.innerText = "🎶 Now Playing: " + name;
-    }else{
-        window.open(`https://www.youtube.com/results?search_query=${name} ${artist}`, "_blank");
-    }
-}
-</script>
-
 </head>
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
-    <h1>🎧 Music Recommender</h1>
-    <a href="/logout">Logout</a>
+<h1>🎧 Music Recommender</h1>
+<a href="/logout">Logout</a>
 </div>
 
-<!-- HERO SECTION (NEW) -->
 <div class="hero">
-    <h2>Discover Music You Love 🎶</h2>
-    <p>Search your favorite song and get smart recommendations instantly</p>
+<h2>Discover Music You Love 🎶</h2>
 
-    <form method="POST">
-        <input id="songInput" name="song" onkeyup="searchSongs()" placeholder="Search any song..." required>
-        <button>Recommend</button>
-    </form>
-
-    <ul id="suggestions"></ul>
+<form method="POST">
+<input id="songInput" name="song" placeholder="Search song..." required>
+<button>Recommend</button>
+</form>
 </div>
 
-<!-- POPULAR SONGS (IMPROVED) -->
 <div class="section">
-    <h2>🔥 Popular Songs</h2>
-
-    <div class="popular-grid">
-    {% for s in top_songs %}
-        <div class="mini-card" onclick="document.getElementById('songInput').value='{{ s }}'">
-            🎵 {{ s }}
-        </div>
-    {% endfor %}
-    </div>
+<h2>🔥 Popular Songs</h2>
+<div class="popular-grid">
+{% for s in top_songs %}
+<div class="mini-card">{{ s }}</div>
+{% endfor %}
+</div>
 </div>
 
-<!-- RECOMMENDATIONS -->
 {% if recommendations %}
 <div class="section">
 <h2>✨ Recommended Songs</h2>
@@ -105,31 +46,13 @@ function playSong(preview, name, artist){
 
 <h3>{{ song.name }}</h3>
 <p>{{ song.artist }}</p>
-<p>{{ song.genre }} • {{ song.year }}</p>
-
-<div class="rating-bar">
-<div style="width: {{ song.score }}%"></div>
-</div>
-
-<div class="buttons">
-<button onclick="playSong('{{ song.preview }}','{{ song.name }}','{{ song.artist }}')">▶ Play</button>
-<button class="like-btn" onclick="likeSong('{{ song.name }}')">❤️</button>
-</div>
-
-<a href="https://www.youtube.com/results?search_query={{ song.name }} {{ song.artist }}"
-target="_blank" class="watch-btn">Watch on YouTube</a>
 
 </div>
 {% endfor %}
 </div>
+
 </div>
 {% endif %}
-
-<!-- GLOBAL PLAYER -->
-<div class="music-player">
-    <p id="nowPlaying">No song playing</p>
-    <audio id="player" controls></audio>
-</div>
 
 <footer>
 <p>Made by Swaliha 💖</p>
