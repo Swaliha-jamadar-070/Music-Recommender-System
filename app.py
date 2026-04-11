@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = "secret123"
 
 # ✅ Load dataset
-data = pd.read_csv(r'C:\Users\Salim\Desktop\music-recommender\tcc_ceds_music_sample.csv')
+data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
     data[col] = data[col].fillna('')
