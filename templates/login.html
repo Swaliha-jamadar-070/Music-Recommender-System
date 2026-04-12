@@ -3,13 +3,9 @@
 <head>
 <title>Login 🎧</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
 <style>
-*{ box-sizing:border-box; }
-
 body{
     font-family:'Poppins',sans-serif;
     background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
@@ -20,26 +16,34 @@ body{
     margin:0;
 }
 
+/* CONTAINER */
 .container{
     display:flex;
     background:#1c1c1c;
     border-radius:15px;
     overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,0.5);
-    max-width:90%;
 }
 
+/* IMAGE SIDE */
 .image-box{
     width:300px;
-    background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4') center/cover;
+    background:url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4') no-repeat center;
+    background-size:cover;
 }
 
+/* LOGIN BOX */
 .login-box{
     padding:40px;
     width:300px;
     text-align:center;
 }
 
+.login-box h2{
+    margin-bottom:20px;
+}
+
+/* INPUT */
 input{
     width:100%;
     padding:12px;
@@ -50,6 +54,7 @@ input{
     color:white;
 }
 
+/* BUTTON */
 button{
     width:100%;
     padding:12px;
@@ -57,14 +62,22 @@ button{
     border-radius:10px;
     background:#1db954;
     color:white;
+    cursor:pointer;
 }
 
-button:hover{ background:#1ed760; }
+button:hover{
+    background:#1ed760;
+}
 
-@media(max-width:768px){
-    .container{ flex-direction:column; }
-    .image-box{ display:none; }
-    .login-box{ width:100%; }
+/* TEXT */
+p{
+    margin-top:15px;
+    font-size:14px;
+}
+
+a{
+    color:#1db954;
+    text-decoration:none;
 }
 </style>
 
@@ -74,18 +87,21 @@ button:hover{ background:#1ed760; }
 
 <div class="container">
 
-<div class="image-box"></div>
+    <!-- IMAGE -->
+    <div class="image-box"></div>
 
-<div class="login-box">
-<h2>🎧 Welcome Back</h2>
+    <!-- LOGIN FORM -->
+    <div class="login-box">
+        <h2>🎧 Welcome Back</h2>
 
-<form method="POST">
-<input type="text" name="username" placeholder="Username" required>
-<input type="password" name="password" placeholder="Password" required>
-<button>Login</button>
-</form>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button>Login</button>
+        </form>
 
-</div>
+        <p>New user? <a href="/register">Register</a></p>
+    </div>
 
 </div>
 
