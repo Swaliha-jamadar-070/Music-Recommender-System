@@ -3,11 +3,12 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import requests
+import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ✅ Load dataset (IMPORTANT: file must be in same folder)
+# ✅ Load dataset
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
@@ -65,14 +66,18 @@ def get_recommendations(song_title):
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] == USER['username'] and request.form['password'] == USER['password']:
-            session['user'] = request.form['username']
+        username = request.form.get('username')
+        password = request.form.get('passcode')   # ✅ FIXED
+
+        if username == USER['username'] and password == USER['password']:
+            session['user'] = username
             return redirect('/')
         else:
             error = "Invalid username or password"
+
     return render_template('login.html', error=error)
 
-# Logout
+# 🚪 Logout
 @app.route('/logout')
 def logout():
     session.pop('user', None)
@@ -107,11 +112,13 @@ def home():
     top_songs = data['track_name'].value_counts().head(5).index.tolist()
 
     if request.method == 'POST':
-        recommendations = get_recommendations(request.form['song'])
+        recommendations = get_recommendations(request.form.get('song'))
 
     return render_template('index.html',
                            recommendations=recommendations,
                            top_songs=top_songs)
 
+# 🚀 Run (LOCAL + RENDER FIX)
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # ✅ Render compatible
+    app.run(host="0.0.0.0", port=port)
