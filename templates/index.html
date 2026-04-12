@@ -8,6 +8,7 @@
 <style>
 *{
     transition:all 0.2s ease;
+    box-sizing:border-box;
 }
 
 body{
@@ -15,6 +16,7 @@ body{
     background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
     color:white;
     margin:0;
+    padding-bottom:100px; /* FIX FOOTER OVERLAP */
 }
 
 /* HEADER */
@@ -222,14 +224,17 @@ button:hover{
     background:#111;
     padding:10px;
     text-align:center;
+    border-top:1px solid #333;
 }
 
 /* FOOTER */
 footer{
     margin-top:80px;
+    margin-bottom:80px; /* FIX VISIBILITY */
     padding:20px;
     background:#111;
     text-align:center;
+    color:#aaa;
 }
 </style>
 
