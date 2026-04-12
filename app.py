@@ -7,7 +7,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ✅ Load dataset (IMPORTANT: file must be in same folder)
+# ✅ Load dataset
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
