@@ -104,7 +104,7 @@ def home():
         return redirect('/login')
 
     recommendations = []
-    top_songs = data['track_name'].value_counts().head(5).index.tolist()
+    top_songs = data['track_name'].value_counts().head(12).index.tolist()
 
     if request.method == 'POST':
         recommendations = get_recommendations(request.form['song'])
