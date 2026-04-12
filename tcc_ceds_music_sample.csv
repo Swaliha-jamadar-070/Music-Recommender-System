@@ -1,5 +1,4 @@
 artist_name,track_name,release_date,genre,len,danceability,loudness,acousticness
-mukesh,mohabbat bhi jhoothi,1950,pop,95,0.35,0.45,0.99
 frankie laine,i believe,1950,pop,51,0.33,0.64,0.95
 johnnie ray,cry,1950,pop,24,0.45,0.58,0.84
 perez prado,patricia,1950,pop,54,0.66,0.74,0.08
