@@ -103,6 +103,31 @@ def recommend_for_user(username):
     unique = {r['name']: r for r in all_recommendations}
     return list(unique.values())[:10]
 
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    msg = None
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # check if user already exists
+        cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
+        existing = cursor.fetchone()
+
+        if existing:
+            msg = "User already exists"
+        else:
+            cursor.execute(
+                "INSERT INTO users (username, password) VALUES (%s,%s)",
+                (username, password)
+            )
+            db.commit()
+            msg = "Registration successful! Please login."
+
+    return render_template('register.html', msg=msg)
+
 # ================== 🔐 LOGIN ==================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
