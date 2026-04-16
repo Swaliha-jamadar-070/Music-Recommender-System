@@ -8,7 +8,7 @@ import mysql.connector
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ================== ✅ MYSQL ==================
+# ================== MYSQL CONNECTION ==================
 db = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -17,7 +17,7 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor()
 
-# ================== ✅ DATA ==================
+# ================== LOAD DATASET ==================
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
@@ -29,7 +29,7 @@ tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(data['combined_features'])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# ================== 🎧 IMAGE ==================
+# ================== GET SONG IMAGE ==================
 def get_song_data(song, artist):
     try:
         url = f"https://itunes.apple.com/search?term={song} {artist}&limit=1"
@@ -41,7 +41,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# ================== 🎯 RECOMMEND ==================
+# ================== CONTENT-BASED RECOMMEND ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
 
@@ -67,7 +67,7 @@ def get_recommendations(song_title):
         })
     return results
 
-# ================== 💾 SAVE HISTORY ==================
+# ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
     try:
         row = data[data['track_name'] == song_name].iloc[0]
@@ -80,7 +80,7 @@ def save_history(username, song_name, action):
     except:
         pass
 
-# ================== 📥 GET HISTORY ==================
+# ================== GET HISTORY ==================
 def get_user_history(username):
     cursor.execute(
         "SELECT track_name FROM user_history WHERE username=%s",
@@ -88,7 +88,7 @@ def get_user_history(username):
     )
     return [row[0] for row in cursor.fetchall()]
 
-# ================== 🤖 PERSONALIZED ==================
+# ================== PERSONALIZED RECOMMEND ==================
 def recommend_for_user(username):
     history = get_user_history(username)
 
@@ -103,7 +103,7 @@ def recommend_for_user(username):
     unique = {r['name']: r for r in all_recommendations}
     return list(unique.values())[:10]
 
-
+# ================== REGISTER ==================
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     msg = None
@@ -112,7 +112,6 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        # check if user already exists
         cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
         existing = cursor.fetchone()
 
@@ -124,11 +123,11 @@ def register():
                 (username, password)
             )
             db.commit()
-            msg = "Registration successful! Please login."
+            return redirect('/login')
 
     return render_template('register.html', msg=msg)
 
-# ================== 🔐 LOGIN ==================
+# ================== LOGIN ==================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -151,31 +150,35 @@ def login():
 
     return render_template('login.html', error=error)
 
-# ================== 🚪 LOGOUT ==================
+# ================== LOGOUT ==================
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect('/login')
 
-# ================== ❤️ LIKE ==================
+# ================== LIKE ==================
 @app.route('/like', methods=['POST'])
 def like():
     song = request.json.get('song')
     user = session.get('user')
 
-    save_history(user, song, "like")
+    if user:
+        save_history(user, song, "like")
+
     return jsonify({"status": "liked"})
 
-# ================== ▶️ PLAY ==================
+# ================== TRACK PLAY ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
     song = request.json.get('song')
     user = session.get('user')
 
-    save_history(user, song, "play")
+    if user:
+        save_history(user, song, "play")
+
     return jsonify({"status": "tracked"})
 
-# ================== 🔍 SEARCH ==================
+# ================== SEARCH ==================
 @app.route('/search')
 def search():
     q = request.args.get('q', '')
@@ -184,7 +187,7 @@ def search():
     res = data[data['track_name'].str.lower().str.contains(q.lower(), na=False)]
     return jsonify(res['track_name'].head(5).tolist())
 
-# ================== 🏠 HOME ==================
+# ================== HOME ==================
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if 'user' not in session:
@@ -202,6 +205,6 @@ def home():
                            recommendations=recommendations,
                            top_songs=top_songs)
 
-# ================== 🚀 RUN ==================
+# ================== RUN ==================
 if __name__ == '__main__':
     app.run(debug=True)
