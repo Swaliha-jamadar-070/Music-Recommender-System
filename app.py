@@ -3,11 +3,21 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import requests
+import mysql.connector
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ✅ Load dataset
+# ================== ✅ MYSQL CONNECTION ==================
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="music_recommender"
+)
+cursor = db.cursor()
+
+# ================== ✅ LOAD DATASET ==================
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
@@ -19,10 +29,10 @@ tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(data['combined_features'])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# Dummy login
+# ================== ✅ LOGIN ==================
 USER = {"username": "admin", "password": "1234"}
 
-# 🎧 Get image + preview
+# ================== 🎧 GET IMAGE ==================
 def get_song_data(song, artist):
     try:
         url = f"https://itunes.apple.com/search?term={song} {artist}&limit=1"
@@ -34,7 +44,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# 🎯 Recommendation
+# ================== 🎯 CONTENT BASED ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
 
@@ -60,7 +70,46 @@ def get_recommendations(song_title):
         })
     return results
 
-# 🔐 Login
+# ================== ✅ SAVE HISTORY ==================
+def save_history(username, song_name, action):
+    try:
+        row = data[data['track_name'] == song_name].iloc[0]
+
+        cursor.execute(
+            "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
+            (username, row['track_name'], row['artist_name'], action)
+        )
+        db.commit()
+    except:
+        pass
+
+# ================== ✅ GET USER HISTORY ==================
+def get_user_history(username):
+    cursor.execute(
+        "SELECT track_name FROM user_history WHERE username=%s",
+        (username,)
+    )
+    return [row[0] for row in cursor.fetchall()]
+
+# ================== ✅ PERSONALIZED ==================
+def recommend_for_user(username):
+    history = get_user_history(username)
+
+    if not history:
+        return []
+
+    all_recommendations = []
+
+    for song in history:
+        recs = get_recommendations(song)
+        all_recommendations.extend(recs)
+
+    unique = {r['name']: r for r in all_recommendations}
+
+    return list(unique.values())[:10]
+
+# ================== 🔐 ROUTES ==================
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -72,23 +121,32 @@ def login():
             error = "Invalid username or password"
     return render_template('login.html', error=error)
 
-# Logout
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     return redirect('/login')
 
-# ❤️ Like
+# ❤️ LIKE
 @app.route('/like', methods=['POST'])
 def like():
     song = request.json.get('song')
-    if 'likes' not in session:
-        session['likes'] = []
-    session['likes'].append(song)
-    session.modified = True
+    user = session.get('user')
+
+    save_history(user, song, "like")
+
     return jsonify({"status": "liked"})
 
-# 🔍 Search
+# ▶️ TRACK PLAY
+@app.route('/track_play', methods=['POST'])
+def track_play():
+    song = request.json.get('song')
+    user = session.get('user')
+
+    save_history(user, song, "play")
+
+    return jsonify({"status": "tracked"})
+
+# 🔍 SEARCH
 @app.route('/search')
 def search():
     q = request.args.get('q', '')
@@ -97,15 +155,20 @@ def search():
     res = data[data['track_name'].str.lower().str.contains(q.lower(), na=False)]
     return jsonify(res['track_name'].head(5).tolist())
 
-# 🏠 Home
+# 🏠 HOME
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if 'user' not in session:
         return redirect('/login')
 
-    recommendations = []
+    user = session['user']
+
+    # ✅ Personalized
+    recommendations = recommend_for_user(user)
+
     top_songs = data['track_name'].value_counts().head(12).index.tolist()
 
+    # manual search override
     if request.method == 'POST':
         recommendations = get_recommendations(request.form['song'])
 
@@ -113,5 +176,6 @@ def home():
                            recommendations=recommendations,
                            top_songs=top_songs)
 
+# ================== 🚀 RUN ==================
 if __name__ == '__main__':
     app.run(debug=True)
