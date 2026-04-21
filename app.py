@@ -11,7 +11,7 @@ app.secret_key = "secret123"
 
 # ================== MYSQL ==================
 db = mysql.connector.connect(
-    host="localhost",   # 🔥 CHANGE THIS if using Render
+    host="localhost",
     user="root",
     password="",
     database="music_recommender"
@@ -60,18 +60,21 @@ def get_recommendations(song_title):
         results.append({
             "name": row['track_name'],
             "artist": row['artist_name'],
+            "genre": row['genre'],
+            "year": row['release_date'],
             "image": image,
-            "preview": preview
+            "preview": preview,
+            "score": score * 100
         })
     return results
 
-# ================== SAVE HISTORY ==================
+# ================== SAVE HISTORY (FIXED DEBUG) ==================
 def save_history(username, song_name, action):
-    print("🔥 Saving:", username, song_name, action)
+    print("🔥 SAVE HISTORY CALLED:", username, song_name, action)
 
     row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
     if row.empty:
-        print("❌ Song not found in dataset")
+        print("❌ SONG NOT FOUND IN DATASET")
         return
 
     row = row.iloc[0]
@@ -81,7 +84,7 @@ def save_history(username, song_name, action):
         (username, row['track_name'], row['artist_name'], action)
     )
     db.commit()
-    print("✅ Saved to DB")
+    print("✅ SAVED TO DB")
 
 # ================== HISTORY ==================
 def get_user_history(username):
@@ -94,6 +97,15 @@ def get_user_history(username):
     """, (username,))
     return cursor.fetchall()
 
+# ================== RECENT ==================
+def get_recently_played(username):
+    cursor.execute("""
+        SELECT track_name FROM user_history
+        WHERE username=%s AND action='play'
+        ORDER BY id DESC LIMIT 5
+    """, (username,))
+    return [r[0] for r in cursor.fetchall()]
+
 # ================== TRENDING ==================
 def get_trending():
     cursor.execute("""
@@ -103,77 +115,60 @@ def get_trending():
         ORDER BY COUNT(*) DESC
         LIMIT 8
     """)
-    return [row[0] for row in cursor.fetchall()]
+    return [r[0] for r in cursor.fetchall()]
 
 # ================== AUTH ==================
-@app.route('/register', methods=['GET','POST'])
-def register():
-    msg=None
-    if request.method=='POST':
-        u=request.form['username']
-        p=request.form['password']
-
-        cursor.execute("SELECT * FROM users WHERE username=%s",(u,))
-        if cursor.fetchone():
-            msg="User exists"
-        else:
-            cursor.execute("INSERT INTO users (username,password) VALUES (%s,%s)",(u,p))
-            db.commit()
-            return redirect('/login')
-
-    return render_template('register.html',msg=msg)
-
 @app.route('/login', methods=['GET','POST'])
 def login():
-    error=None
-    if request.method=='POST':
-        u=request.form['username']
-        p=request.form['password']
+    if request.method == 'POST':
+        u = request.form['username']
+        p = request.form['password']
 
         cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s",(u,p))
         if cursor.fetchone():
-            session['user']=u
+            session['user'] = u
             return redirect('/')
         else:
-            error="Invalid"
+            return "Invalid login"
 
-    return render_template('login.html',error=error)
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
-# ================== ACTIONS ==================
+# ================== ACTION ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    user=session.get('user')
-    data_req=request.get_json()
+    print("🔥 TRACK PLAY API HIT")
 
-    print("🔥 PLAY API", user, data_req)
+    user = session.get('user')
+    data_req = request.get_json()
+
+    print("USER:", user)
+    print("DATA:", data_req)
 
     if user and data_req:
-        save_history(user,data_req.get('song'),"play")
+        save_history(user, data_req.get('song'), "play")
 
-    return jsonify({"status":"ok"})
+    return jsonify({"status": "ok"})
 
 @app.route('/like', methods=['POST'])
 def like():
-    user=session.get('user')
-    data_req=request.get_json()
-
-    print("🔥 LIKE API", user, data_req)
+    user = session.get('user')
+    data_req = request.get_json()
 
     if user and data_req:
-        save_history(user,data_req.get('song'),"like")
+        save_history(user, data_req.get('song'), "like")
 
-    return jsonify({"status":"ok"})
+    return jsonify({"status": "ok"})
 
 # ================== SEARCH ==================
 @app.route('/search')
 def search():
-    q=request.args.get('q','')
-    res=data[data['track_name'].str.lower().str.contains(q.lower(),na=False)]
+    q = request.args.get('q', '')
+    res = data[data['track_name'].str.lower().str.contains(q.lower(), na=False)]
     return jsonify(res['track_name'].head(5).tolist())
 
 # ================== HOME ==================
@@ -182,22 +177,18 @@ def home():
     if 'user' not in session:
         return redirect('/login')
 
-    user=session['user']
+    user = session['user']
 
-    recs=[]
-    if request.method=='POST':
-        recs=get_recommendations(request.form['song'])
-
-    history=get_user_history(user)
-    trending=get_trending()
-    top_songs=data['track_name'].value_counts().head(10).index.tolist()
+    recs = []
+    if request.method == 'POST':
+        recs = get_recommendations(request.form['song'])
 
     return render_template('index.html',
                            recommendations=recs,
-                           history=history,
-                           trending=trending,
-                           top_songs=top_songs)
+                           history=get_user_history(user),
+                           trending=get_trending(),
+                           top_songs=data['track_name'].value_counts().head(10).index.tolist())
 
 # ================== RUN ==================
-if __name__=='__main__':
+if __name__ == '__main__':
     app.run(debug=True)
