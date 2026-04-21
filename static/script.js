@@ -25,5 +25,5 @@ function likeSong(name){
         body:JSON.stringify({song:name})
     });
 
-    alert("❤️ Liked!");
+    alert("❤️ Added to liked!");
 }
