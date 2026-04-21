@@ -184,16 +184,39 @@ body{
 }
 
 /* ================= PLAYER ================= */
-.player{
-    position:fixed;
-    bottom:0;
-    left:240px;
-    right:0;
-    background:rgba(0,0,0,0.9);
-    padding:10px;
-    backdrop-filter:blur(10px);
+.player {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    width: 60%;
+    max-width: 600px;
+
+    background: rgba(20, 20, 20, 0.9);
+    backdrop-filter: blur(10px);
+
+    padding: 15px 20px;
+    border-radius: 20px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 1000;
 }
 
+.player p {
+    margin: 0;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #ccc;
+}
+
+.player audio {
+    width: 100%;
+}
 /* ================= NOW PLAYING TEXT ================= */
 #now{
     font-size:14px;
