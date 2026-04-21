@@ -9,18 +9,17 @@ import os
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ✅ Fix session for Render
+# ✅ Render session fix
 app.config['SESSION_COOKIE_SAMESITE'] = "None"
 app.config['SESSION_COOKIE_SECURE'] = True
 
-# ================== DATABASE (POSTGRESQL - RENDER) ==================
+# ================== DATABASE ==================
 DATABASE_URL = os.getenv("DATABASE_URL")
-
 conn = psycopg2.connect(DATABASE_URL)
 conn.autocommit = True
 cursor = conn.cursor()
 
-# ================== CREATE TABLE ==================
+# ================== TABLE ==================
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS user_history (
     id SERIAL PRIMARY KEY,
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS user_history (
 # ================== LOAD DATA ==================
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
-for col in ['genre', 'artist_name', 'track_name', 'release_date']:
+for col in ['genre','artist_name','track_name','release_date']:
     data[col] = data[col].fillna('')
 
 data['combined'] = data['genre'] + ' ' + data['artist_name'] + ' ' + data['track_name']
@@ -56,7 +55,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# ================== RECOMMEND ==================
+# ================== CONTENT RECOMMEND ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
     if matches.empty:
@@ -101,16 +100,48 @@ def save_history(username, song_name, action):
     except Exception as e:
         print("🔥 DB ERROR:", e)
 
-# ================== HISTORY ==================
-def get_user_history(username):
+# ================== USER PROFILE ==================
+def get_user_profile(username):
     cursor.execute("""
-        SELECT track_name, artist_name, action
+        SELECT track_name, action, COUNT(*) as score
         FROM user_history
         WHERE username=%s
-        ORDER BY id DESC
-        LIMIT 10
+        GROUP BY track_name, action
     """, (username,))
-    return cursor.fetchall()
+    
+    rows = cursor.fetchall()
+    profile = {}
+
+    for track, action, score in rows:
+        weight = score
+        if action == "like":
+            weight *= 3
+        elif action == "play":
+            weight *= 1
+
+        profile[track] = profile.get(track, 0) + weight
+
+    return sorted(profile, key=profile.get, reverse=True)[:3]
+
+# ================== PERSONAL RECOMMEND ==================
+def recommend_for_user(username):
+    top_songs = get_user_profile(username)
+
+    if not top_songs:
+        return []
+
+    recs = []
+    for song in top_songs:
+        recs.extend(get_recommendations(song))
+
+    seen = set()
+    unique = []
+    for r in recs:
+        if r['name'] not in seen:
+            unique.append(r)
+            seen.add(r['name'])
+
+    return unique[:10]
 
 # ================== TRENDING ==================
 def get_trending():
@@ -122,16 +153,6 @@ def get_trending():
         LIMIT 8
     """)
     return [r[0] for r in cursor.fetchall()]
-
-# ================== PERSONAL RECOMMEND ==================
-def recommend_for_user(username):
-    history = get_user_history(username)
-
-    if not history:
-        return []
-
-    last_song = history[0][0]  # last played
-    return get_recommendations(last_song)
 
 # ================== AUTH ==================
 @app.route('/login', methods=['GET','POST'])
@@ -184,18 +205,26 @@ def home():
 
     user = session['user']
 
-    # 🔥 personalized recommendations
     recs = recommend_for_user(user)
 
-    # 🔍 manual search
     if request.method == 'POST':
         recs = get_recommendations(request.form['song'])
 
     return render_template('index.html',
                            recommendations=recs,
                            history=get_user_history(user),
-                           trending=get_trending(),
-                           top_songs=data['track_name'].value_counts().head(10).index.tolist())
+                           trending=get_trending())
+
+# ================== HISTORY ==================
+def get_user_history(username):
+    cursor.execute("""
+        SELECT track_name, artist_name, action
+        FROM user_history
+        WHERE username=%s
+        ORDER BY id DESC
+        LIMIT 10
+    """, (username,))
+    return cursor.fetchall()
 
 # ================== RUN ==================
 if __name__ == '__main__':
