@@ -2,48 +2,40 @@
 <html>
 <head>
 <title>Music Recommender 🎵</title>
-<link rel="icon" href="data:,">   <!-- ✅ FIXES 404 ERROR -->
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 
 <style>
 body{
-    font-family:Poppins;
+    font-family:Arial;
     background:#0f2027;
     color:white;
     margin:0;
     padding-bottom:100px;
 }
-
 .header{
     display:flex;
     justify-content:space-between;
     padding:20px;
     background:#000;
 }
-
-.section{
-    padding:20px;
-}
-
+.section{ padding:20px; }
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:20px;
 }
-
 .card{
     background:#1c1c1c;
     padding:15px;
     border-radius:10px;
+    transition:0.3s;
 }
-
+.card:hover{ transform:scale(1.05); }
 .cover{
     width:100%;
     height:200px;
     object-fit:cover;
 }
-
 button{
     margin:5px;
     padding:8px 12px;
@@ -51,10 +43,8 @@ button{
     border-radius:6px;
     cursor:pointer;
 }
-
 .play-btn{ background:#28a745; color:white; }
 .like-btn{ background:#444; color:white; }
-
 .music-player{
     position:fixed;
     bottom:0;
@@ -65,83 +55,81 @@ button{
 </style>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+function playSong(btn){
+    let preview = btn.dataset.preview;
+    let name = btn.dataset.name;
+    let artist = btn.dataset.artist;
 
-    function playSong(btn){
-        let preview = JSON.parse(btn.dataset.preview || "null");
-        let name = JSON.parse(btn.dataset.name || "null");
-        let artist = JSON.parse(btn.dataset.artist || "null");
-
-        console.log("🔥 FUNCTION CALLED");
-        console.log("🎵 Playing:", name);
-
-        fetch('/track_play',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({song:name})
-        })
-        .then(res => res.json())
-        .then(data => console.log("✅ API:", data))
-        .catch(err => console.log("❌ ERROR:", err));
-
-        let player = document.getElementById("player");
-        let now = document.getElementById("nowPlaying");
-
-        if(preview){
-            player.src = preview;
-            player.play();
-            now.innerText = "🎶 Now Playing: " + name;
-        }else{
-            window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
-        }
-    }
-
-    function likeSong(btn){
-        let name = JSON.parse(btn.dataset.name || "null");
-
-        fetch('/like',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({song:name})
-        })
-        .then(res => res.json())
-        .then(data => console.log("❤️ liked:", data))
-        .catch(err => console.log("❌ ERROR:", err));
-    }
-
-    // 🔥 attach events manually (BEST WAY)
-    document.querySelectorAll(".play-btn").forEach(btn=>{
-        btn.addEventListener("click", ()=>playSong(btn));
+    fetch('/track_play',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({song:name})
     });
 
-    document.querySelectorAll(".like-btn").forEach(btn=>{
-        btn.addEventListener("click", ()=>likeSong(btn));
-    });
+    let player = document.getElementById("player");
+    let now = document.getElementById("nowPlaying");
 
-});
+    if(preview){
+        player.src = preview;
+        player.play();
+        now.innerText = "Now Playing: " + name;
+    }else{
+        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
+    }
+}
+
+function likeSong(btn){
+    let name = btn.dataset.name;
+
+    fetch('/like',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({song:name})
+    });
+}
 </script>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
-    <h2>🎧 Music Recommender</h2>
-    <a href="/logout" style="color:white;">Logout</a>
+<h2>🎧 Music Recommender</h2>
+<a href="/logout" style="color:white;">Logout</a>
 </div>
 
-<!-- SEARCH -->
 <div class="section">
-    <form method="POST">
-        <input name="song" placeholder="Search song..." required style="padding:10px;">
-        <button type="submit">Recommend</button>
-    </form>
+<form method="POST">
+<input name="song" placeholder="Search song..." required>
+<button>Recommend</button>
+</form>
 </div>
 
-<!-- RECOMMENDATIONS -->
+<!-- 🔥 TRENDING -->
 <div class="section">
-<h3>✨ Recommended Songs</h3>
+<h3>🔥 Trending</h3>
+<div class="grid">
+{% for t in trending %}
+<div class="card">{{ t }}</div>
+{% endfor %}
+</div>
+</div>
 
+<!-- 🕒 HISTORY -->
+<div class="section">
+<h3>🕒 Your Activity</h3>
+<div class="grid">
+{% for h in history %}
+<div class="card">
+<h4>{{ h[0] }}</h4>
+<p>{{ h[1] }} ({{ h[2] }})</p>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<!-- 🎯 RECOMMEND -->
+<div class="section">
+<h3>✨ Recommended</h3>
 <div class="grid">
 {% for song in recommendations %}
 <div class="card">
@@ -151,22 +139,18 @@ document.addEventListener("DOMContentLoaded", function(){
 <h3>{{ song.name }}</h3>
 <p>{{ song.artist }}</p>
 
-<!-- ✅ SAFE PLAY BUTTON -->
-<button 
-class="play-btn"
+<button class="play-btn"
 onclick="playSong(this)"
-data-preview='{{ song.preview | tojson | safe }}'
-data-name='{{ song.name | tojson | safe }}'
-data-artist='{{ song.artist | tojson | safe }}'>
+data-preview="{{ song.preview }}"
+data-name="{{ song.name }}"
+data-artist="{{ song.artist }}">
 ▶ Play
 </button>
 
-<!-- ❤️ SAFE LIKE BUTTON -->
-<button 
-class="like-btn"
+<button class="like-btn"
 onclick="likeSong(this)"
-data-name='{{ song.name | tojson | safe }}'>
-❤️ Like
+data-name="{{ song.name }}">
+❤️
 </button>
 
 </div>
@@ -174,10 +158,9 @@ data-name='{{ song.name | tojson | safe }}'>
 </div>
 </div>
 
-<!-- PLAYER -->
 <div class="music-player">
-    <p id="nowPlaying">No song playing</p>
-    <audio id="player" controls></audio>
+<p id="nowPlaying">No song</p>
+<audio id="player" controls></audio>
 </div>
 
 </body>
