@@ -2,23 +2,27 @@ from flask import Flask, render_template, request, jsonify, redirect, session
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import requests
 import psycopg2
 import os
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-app.config['SESSION_COOKIE_SAMESITE'] = "None"
-app.config['SESSION_COOKIE_SECURE'] = True
-
-# ================= DATABASE =================
+# ================= CONFIG =================
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+    client_id="YOUR_SPOTIFY_CLIENT_ID",
+    client_secret="YOUR_SPOTIFY_CLIENT_SECRET"
+))
 
 conn = psycopg2.connect(DATABASE_URL)
 conn.autocommit = True
 cursor = conn.cursor()
 
+# ================= TABLES =================
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS user_history (
     id SERIAL PRIMARY KEY,
@@ -30,27 +34,21 @@ CREATE TABLE IF NOT EXISTS user_history (
 )
 """)
 
-# ================= LOAD DATA =================
-data = pd.read_csv('tcc_ceds_music_sample.csv')
-data = data.fillna('')
-
+# ================= DATA =================
+data = pd.read_csv('tcc_ceds_music_sample.csv').fillna('')
 data['combined'] = data['genre'] + " " + data['artist_name'] + " " + data['track_name']
 
 tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(data['combined'])
-cosine_sim = cosine_similarity(tfidf_matrix)
+cosine_sim = cosine_similarity(tfidf.fit_transform(data['combined']))
 
-# ================= IMAGE =================
+# ================= SPOTIFY =================
 def get_song_data(song, artist):
     try:
-        url = f"https://itunes.apple.com/search?term={song} {artist}&limit=1"
-        res = requests.get(url).json()
-        if res['resultCount'] > 0:
-            item = res['results'][0]
-            return item['artworkUrl100'], item.get('previewUrl', "")
+        results = sp.search(q=f"{song} {artist}", limit=1)
+        track = results['tracks']['items'][0]
+        return track['album']['images'][0]['url'], track['preview_url']
     except:
-        pass
-    return "https://via.placeholder.com/300", ""
+        return "https://via.placeholder.com/300", ""
 
 # ================= RECOMMEND =================
 def get_recommendations(song):
@@ -108,6 +106,34 @@ def get_trending():
     """)
     return [x[0] for x in cursor.fetchall()]
 
+# ================= AI =================
+def collaborative_recommend(user):
+    cursor.execute("""
+        SELECT track_name FROM user_history
+        WHERE username=%s AND action='like'
+    """, (user,))
+    user_likes = [x[0] for x in cursor.fetchall()]
+
+    if not user_likes:
+        return []
+
+    cursor.execute("SELECT username, track_name FROM user_history WHERE action='like'")
+    all_data = cursor.fetchall()
+
+    similar_users = set()
+    for u, song in all_data:
+        if song in user_likes and u != user:
+            similar_users.add(u)
+
+    recs = set()
+    for u in similar_users:
+        cursor.execute("""
+            SELECT track_name FROM user_history
+            WHERE username=%s AND action='like'
+        """, (u,))
+        recs.update([x[0] for x in cursor.fetchall()])
+
+    return list(recs - set(user_likes))[:5]
 
 # ================= ROUTES =================
 @app.route('/login', methods=['GET','POST'])
@@ -115,7 +141,7 @@ def login():
     if request.method == 'POST':
         session['user'] = request.form['username']
         return redirect('/')
-    return render_template('login.html')
+    return render_template("login.html")
 
 
 @app.route('/logout')
@@ -128,22 +154,31 @@ def logout():
 def track_play():
     user = session.get('user')
     song = request.json.get('song')
-
     if user and song:
         save_history(user, song, "play")
-
-    return jsonify({"status": "ok"})
+    return jsonify({"ok":True})
 
 
 @app.route('/like', methods=['POST'])
 def like():
     user = session.get('user')
     song = request.json.get('song')
-
     if user and song:
         save_history(user, song, "like")
+    return jsonify({"ok":True})
 
-    return jsonify({"status": "liked"})
+
+@app.route('/liked')
+def liked():
+    user = session.get('user')
+    cursor.execute("""
+        SELECT track_name, artist_name
+        FROM user_history
+        WHERE username=%s AND action='like'
+        ORDER BY id DESC
+    """, (user,))
+    songs = cursor.fetchall()
+    return render_template("liked.html", songs=songs)
 
 
 @app.route('/', methods=['GET','POST'])
@@ -158,9 +193,8 @@ def home():
     return render_template("index.html",
                            recommendations=recs,
                            history=get_history(session['user']),
-                           trending=get_trending())
-
+                           trending=get_trending(),
+                           ai_recs=collaborative_recommend(session['user']))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
