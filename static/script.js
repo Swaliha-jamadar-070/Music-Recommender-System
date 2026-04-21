@@ -1,4 +1,5 @@
 function play(name, preview, artist){
+
     fetch("/play",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
