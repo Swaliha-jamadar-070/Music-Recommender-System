@@ -8,67 +8,60 @@
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
     <h2>🎧 Music AI</h2>
-    <a href="/">🏠 Home</a>
+    <a href="/">Home</a>
     <a href="/liked">❤️ Liked</a>
-    <a href="/logout">🚪 Logout</a>
+    <a href="/logout">Logout</a>
 </div>
 
 <div class="main">
 
-<!-- HERO SEARCH -->
-<div class="search-box">
-    <form method="POST">
-        <input name="song" placeholder="Search any song..." required>
-        <button>Search</button>
-    </form>
-</div>
+<h1>Music Recommender</h1>
 
-<!-- RECOMMENDED -->
-<h2>✨ Recommended For You</h2>
+<form method="POST" class="search">
+    <input name="song" placeholder="Search song..." required>
+    <button>Search</button>
+</form>
+
+<h2>✨ Recommended</h2>
 <div class="row">
 {% for s in recs %}
-<div class="card">
+<div class="card" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">
 <img src="{{s.image}}">
 <h3>{{s.name}}</h3>
 <p>{{s.artist}}</p>
-
-<button class="play" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">▶ Play</button>
-<button class="like" onclick="like('{{s.name}}')">❤️</button>
-
 </div>
 {% endfor %}
 </div>
 
-<!-- HISTORY LIKE YOUTUBE -->
 <h2>🕒 Recently Played</h2>
 <div class="row">
 {% for h in history %}
-<div class="small-card" onclick="quickPlay('{{h[0]}}','{{h[1]}}')">
-🎵 {{h[0]}} <br>
-<small>{{h[1]}}</small>
+<div class="card" onclick="play('{{h.name}}','{{h.preview}}','{{h.artist}}')">
+<img src="{{h.image}}">
+<h3>{{h.name}}</h3>
+<p>{{h.artist}}</p>
 </div>
 {% endfor %}
 </div>
 
-<!-- TRENDING -->
 <h2>🔥 Trending</h2>
 <div class="row">
 {% for t in trending %}
-<div class="small-card">
-{{t}}
+<div class="card" onclick="play('{{t.name}}','{{t.preview}}','{{t.artist}}')">
+<img src="{{t.image}}">
+<h3>{{t.name}}</h3>
+<p>{{t.artist}}</p>
 </div>
 {% endfor %}
 </div>
 
 </div>
 
-<!-- PLAYER -->
-<div class="player-bar">
-<span id="now">Nothing playing</span>
-<audio id="player" controls></audio>
+<div class="player">
+<p id="now">No song playing</p>
+<audio id="audio" controls></audio>
 </div>
 
 <script src="/static/script.js"></script>
