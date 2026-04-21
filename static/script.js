@@ -1,53 +1,65 @@
+// 🎧 GLOBAL PLAYLIST
 let queue = [];
-let index = 0;
+let currentIndex = 0;
 
+// ▶ PLAY FUNCTION
 function play(name, preview, artist){
-fetch("/play",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({song:name})});
 
-let audio=document.getElementById("audio");
-audio.src=preview;
-audio.play();
+    fetch("/play",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({song:name})
+    });
 
-document.getElementById("now").innerText=name;
+    let audio = document.getElementById("audio");
+    let now = document.getElementById("now");
 
-queue.push({name,preview,artist});
-index=queue.length-1;
+    if(preview){
+        audio.src = preview;
+        audio.play();
+        now.innerText = "🎶 " + name + " - " + artist;
+
+        // queue handling
+        queue.push({name, preview, artist});
+        currentIndex = queue.length - 1;
+    }else{
+        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
+    }
 }
 
-document.getElementById("audio").addEventListener("ended",()=>{
-index++;
-if(queue[index]){
-play(queue[index].name,queue[index].preview,queue[index].artist);
-}
-});
-
+// ❤️ LIKE SONG
 function likeSong(name){
-fetch("/like",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({song:name})});
+    fetch("/like",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({song:name})
+    });
+
+    alert("❤️ Added to Liked!");
 }
 
-function addToPlaylist(name,preview,artist){
-fetch("/add_to_playlist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,preview,artist})});
-alert("Added!");
-}
+// 🔄 AUTOPLAY NEXT
+document.getElementById("audio").addEventListener("ended", () => {
+    if(currentIndex < queue.length - 1){
+        currentIndex++;
+        let next = queue[currentIndex];
+        play(next.name, next.preview, next.artist);
+    }
+});
 
+// 🎤 VOICE SEARCH
 function startVoice(){
-let rec=new webkitSpeechRecognition();
-rec.onresult=e=>{
-document.querySelector("input[name='song']").value=e.results[0][0].transcript;
-};
-rec.start();
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+    recognition.onresult = function(event){
+        let text = event.results[0][0].transcript;
+        document.getElementById("searchInput").value = text;
+    };
+
+    recognition.start();
 }
 
-function sendMessage(){
-let msg=document.getElementById("chatInput").value;
-
-fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})})
-.then(r=>r.json())
-.then(data=>{
-let box=document.getElementById("chatBox");
-box.innerHTML="";
-data.forEach(s=>{
-box.innerHTML+=`<p onclick="play('${s.name}','${s.preview}','${s.artist}')">${s.name}</p>`;
-});
-});
+// 🌗 THEME TOGGLE
+function toggleTheme(){
+    document.body.classList.toggle("light-mode");
 }
