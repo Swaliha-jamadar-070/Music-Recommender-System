@@ -41,7 +41,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# ================== CONTENT-BASED RECOMMEND ==================
+# ================== CONTENT RECOMMEND ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
 
@@ -70,23 +70,27 @@ def get_recommendations(song_title):
 # ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
     try:
-        row = data[data['track_name'] == song_name].iloc[0]
+        row = data[data['track_name'].str.lower() == song_name.lower()]
+        if row.empty:
+            return
+
+        row = row.iloc[0]
 
         cursor.execute(
             "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
             (username, row['track_name'], row['artist_name'], action)
         )
         db.commit()
-    except:
-        pass
+    except Exception as e:
+        print("Error:", e)
 
-# ================== GET HISTORY ==================
+# ================== USER HISTORY ==================
 def get_user_history(username):
     cursor.execute(
-        "SELECT track_name FROM user_history WHERE username=%s",
+        "SELECT track_name, action FROM user_history WHERE username=%s ORDER BY id DESC LIMIT 10",
         (username,)
     )
-    return [row[0] for row in cursor.fetchall()]
+    return cursor.fetchall()
 
 # ================== PERSONALIZED RECOMMEND ==================
 def recommend_for_user(username):
@@ -95,13 +99,33 @@ def recommend_for_user(username):
     if not history:
         return []
 
-    all_recommendations = []
+    recommendations = []
+    seen = set()
 
-    for song in history:
-        all_recommendations.extend(get_recommendations(song))
+    for song, action in history:
+        recs = get_recommendations(song)
 
-    unique = {r['name']: r for r in all_recommendations}
-    return list(unique.values())[:10]
+        for r in recs:
+            if r['name'] in seen:
+                continue
+
+            if action == "like":
+                r['score'] += 10
+
+            seen.add(r['name'])
+            recommendations.append(r)
+
+    recommendations = sorted(recommendations, key=lambda x: x['score'], reverse=True)
+
+    return recommendations[:10]
+
+# ================== RECENT ==================
+def get_recently_played(username):
+    cursor.execute(
+        "SELECT track_name FROM user_history WHERE username=%s ORDER BY id DESC LIMIT 5",
+        (username,)
+    )
+    return [row[0] for row in cursor.fetchall()]
 
 # ================== REGISTER ==================
 @app.route('/register', methods=['GET', 'POST'])
@@ -113,15 +137,10 @@ def register():
         password = request.form['password']
 
         cursor.execute("SELECT * FROM users WHERE username=%s", (username,))
-        existing = cursor.fetchone()
-
-        if existing:
+        if cursor.fetchone():
             msg = "User already exists"
         else:
-            cursor.execute(
-                "INSERT INTO users (username, password) VALUES (%s,%s)",
-                (username, password)
-            )
+            cursor.execute("INSERT INTO users (username,password) VALUES (%s,%s)", (username,password))
             db.commit()
             return redirect('/login')
 
@@ -136,17 +155,14 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        cursor.execute(
-            "SELECT * FROM users WHERE username=%s AND password=%s",
-            (username, password)
-        )
+        cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username,password))
         user = cursor.fetchone()
 
         if user:
             session['user'] = username
             return redirect('/')
         else:
-            error = "Invalid username or password"
+            error = "Invalid credentials"
 
     return render_template('login.html', error=error)
 
@@ -159,24 +175,24 @@ def logout():
 # ================== LIKE ==================
 @app.route('/like', methods=['POST'])
 def like():
-    song = request.json.get('song')
     user = session.get('user')
+    song = request.json.get('song')
 
     if user:
         save_history(user, song, "like")
 
-    return jsonify({"status": "liked"})
+    return jsonify({"status":"ok"})
 
 # ================== TRACK PLAY ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    song = request.json.get('song')
     user = session.get('user')
+    song = request.json.get('song')
 
     if user:
         save_history(user, song, "play")
 
-    return jsonify({"status": "tracked"})
+    return jsonify({"status":"ok"})
 
 # ================== SEARCH ==================
 @app.route('/search')
@@ -184,6 +200,7 @@ def search():
     q = request.args.get('q', '')
     if not q:
         return jsonify([])
+
     res = data[data['track_name'].str.lower().str.contains(q.lower(), na=False)]
     return jsonify(res['track_name'].head(5).tolist())
 
@@ -194,16 +211,18 @@ def home():
         return redirect('/login')
 
     user = session['user']
-    recommendations = recommend_for_user(user)
 
-    top_songs = data['track_name'].value_counts().head(12).index.tolist()
+    recommendations = recommend_for_user(user)
+    recent = get_recently_played(user)
+    top_songs = data['track_name'].value_counts().head(10).index.tolist()
 
     if request.method == 'POST':
         recommendations = get_recommendations(request.form['song'])
 
     return render_template('index.html',
                            recommendations=recommendations,
-                           top_songs=top_songs)
+                           top_songs=top_songs,
+                           recent=recent)
 
 # ================== RUN ==================
 if __name__ == '__main__':
