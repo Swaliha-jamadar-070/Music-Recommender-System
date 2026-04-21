@@ -1,80 +1,53 @@
-// 🎵 PLAY FUNCTION
+let queue = [];
+let index = 0;
+
 function play(name, preview, artist){
+fetch("/play",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({song:name})});
 
-    fetch("/play",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({song:name})
-    });
+let audio=document.getElementById("audio");
+audio.src=preview;
+audio.play();
 
-    let audio = document.getElementById("audio");
-    let now = document.getElementById("now");
+document.getElementById("now").innerText=name;
 
-    if(preview){
-        audio.src = preview;
-        audio.play();
-        now.innerText = "🎶 " + name + " - " + artist;
-
-        startWave(audio); // start waveform
-    }else{
-        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
-    }
+queue.push({name,preview,artist});
+index=queue.length-1;
 }
 
-// ❤️ LIKE
+document.getElementById("audio").addEventListener("ended",()=>{
+index++;
+if(queue[index]){
+play(queue[index].name,queue[index].preview,queue[index].artist);
+}
+});
+
 function likeSong(name){
-    fetch("/like",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({song:name})
-    });
-
-    alert("❤️ Added to liked!");
+fetch("/like",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({song:name})});
 }
 
-// 🌗 DARK / LIGHT MODE
-function toggleMode(){
-    document.body.classList.toggle("light-mode");
+function addToPlaylist(name,preview,artist){
+fetch("/add_to_playlist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,preview,artist})});
+alert("Added!");
 }
 
+function startVoice(){
+let rec=new webkitSpeechRecognition();
+rec.onresult=e=>{
+document.querySelector("input[name='song']").value=e.results[0][0].transcript;
+};
+rec.start();
+}
 
-// 🌊 WAVEFORM PLAYER
-function startWave(audio){
+function sendMessage(){
+let msg=document.getElementById("chatInput").value;
 
-    const canvas = document.getElementById("wave");
-    const ctx = canvas.getContext("2d");
-
-    const audioCtx = new AudioContext();
-    const src = audioCtx.createMediaElementSource(audio);
-    const analyser = audioCtx.createAnalyser();
-
-    src.connect(analyser);
-    analyser.connect(audioCtx.destination);
-
-    analyser.fftSize = 256;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    function draw(){
-        requestAnimationFrame(draw);
-
-        analyser.getByteFrequencyData(dataArray);
-
-        ctx.fillStyle = "#111";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        let barWidth = (canvas.width / bufferLength) * 2;
-        let x = 0;
-
-        for(let i = 0; i < bufferLength; i++){
-            let barHeight = dataArray[i] / 2;
-
-            ctx.fillStyle = "#1db954";
-            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-            x += barWidth + 1;
-        }
-    }
-
-    draw();
+fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:msg})})
+.then(r=>r.json())
+.then(data=>{
+let box=document.getElementById("chatBox");
+box.innerHTML="";
+data.forEach(s=>{
+box.innerHTML+=`<p onclick="play('${s.name}','${s.preview}','${s.artist}')">${s.name}</p>`;
+});
+});
 }
