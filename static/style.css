@@ -1,11 +1,27 @@
+/* ================= ROOT THEME ================= */
+:root {
+    --bg: linear-gradient(135deg, #1e3c48, #2a6f77);
+    --card: rgba(255,255,255,0.08);
+    --text: white;
+    --accent: #1db954;
+}
+
+.light-mode {
+    --bg: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    --card: rgba(0,0,0,0.08);
+    --text: #111;
+    --accent: #1db954;
+}
+
+/* ================= BODY ================= */
 body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #1e3c48, #2a6f77);
-    color: white;
+    background: var(--bg);
+    color: var(--text);
 }
 
-/* SIDEBAR */
+/* ================= SIDEBAR ================= */
 .sidebar {
     position: fixed;
     width: 220px;
@@ -23,22 +39,39 @@ body {
 .sidebar a {
     text-decoration: none;
     color: white;
-    margin: 10px 0;
+    margin: 12px 0;
     font-size: 18px;
     transition: 0.3s;
 }
 
 .sidebar a:hover {
-    color: #1db954;
+    color: var(--accent);
 }
 
-/* MAIN */
+/* DARK/LIGHT BUTTON */
+.mode-toggle {
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.mode-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* ================= MAIN ================= */
 .main {
     margin-left: 240px;
     padding: 30px;
+    min-height: 100vh;
 }
 
-/* SEARCH BAR (🔥 GLASS STYLE) */
+/* ================= SEARCH BAR ================= */
 .search-bar {
     display: flex;
     justify-content: center;
@@ -51,9 +84,10 @@ body {
     border-radius: 50px;
     border: none;
     outline: none;
-    backdrop-filter: blur(10px);
     background: rgba(255,255,255,0.2);
-    color: white;
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    font-size: 16px;
 }
 
 .search-bar button {
@@ -61,23 +95,27 @@ body {
     padding: 15px 25px;
     border-radius: 50px;
     border: none;
-    background: #1db954;
+    background: var(--accent);
     color: white;
     cursor: pointer;
     transition: 0.3s;
 }
 
 .search-bar button:hover {
-    background: #1ed760;
     transform: scale(1.05);
+    background: #1ed760;
 }
 
-/* SECTION */
+/* ================= SECTION ================= */
 .section {
     margin-top: 40px;
 }
 
-/* SCROLL */
+.section h2 {
+    margin-bottom: 15px;
+}
+
+/* ================= SCROLL ================= */
 .scroll-container {
     display: flex;
     overflow-x: auto;
@@ -85,10 +123,19 @@ body {
     padding-bottom: 15px;
 }
 
-/* CARDS */
+.scroll-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+/* ================= CARD ================= */
 .card {
     min-width: 180px;
-    background: rgba(255,255,255,0.08);
+    background: var(--card);
     border-radius: 15px;
     padding: 15px;
     transition: 0.3s;
@@ -98,7 +145,7 @@ body {
     transform: scale(1.08);
 }
 
-/* IMAGES */
+/* IMAGE FIX */
 .card img {
     width: 100%;
     height: 180px;
@@ -106,14 +153,14 @@ body {
     border-radius: 10px;
 }
 
-/* BUTTONS */
+/* ================= BUTTONS ================= */
 button {
     margin-top: 10px;
     padding: 8px 12px;
     border-radius: 10px;
     border: none;
     cursor: pointer;
-    background: #1db954;
+    background: var(--accent);
     color: white;
     transition: 0.3s;
 }
@@ -133,7 +180,7 @@ button:hover {
     gap: 10px;
 }
 
-/* PLAYER */
+/* ================= PLAYER ================= */
 .player {
     position: fixed;
     bottom: 0;
@@ -141,4 +188,26 @@ button:hover {
     right: 0;
     background: #111;
     padding: 10px;
+}
+
+/* ================= WAVEFORM ================= */
+#wave {
+    width: 100%;
+    height: 60px;
+    margin-top: 5px;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 180px;
+    }
+
+    .main {
+        margin-left: 200px;
+    }
+
+    .search-bar input {
+        width: 250px;
+    }
 }
