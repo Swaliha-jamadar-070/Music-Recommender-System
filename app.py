@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import requests
 import mysql.connector
+import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
@@ -63,18 +64,15 @@ def get_recommendations(song_title):
             "year": row['release_date'],
             "image": image,
             "preview": preview,
-            "score": round(score * 100, 2)
+            "score": score * 100
         })
     return results
 
 # ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
-    print("👉 Saving:", username, song_name)
-
     row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
 
     if row.empty:
-        print("❌ Song not found")
         return
 
     row = row.iloc[0]
@@ -83,17 +81,51 @@ def save_history(username, song_name, action):
         "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
         (username, row['track_name'], row['artist_name'], action)
     )
-
     db.commit()
-    print("✅ Inserted into DB")
 
 # ================== USER HISTORY ==================
 def get_user_history(username):
     cursor.execute(
-        "SELECT track_name, action FROM user_history WHERE username=%s ORDER BY id DESC LIMIT 10",
+        "SELECT track_name, action FROM user_history WHERE username=%s ORDER BY id DESC LIMIT 20",
         (username,)
     )
     return cursor.fetchall()
+
+# ================== FAVORITE GENRES ==================
+def get_user_favorite_genres(username):
+    cursor.execute("""
+        SELECT d.genre, COUNT(*) as count
+        FROM user_history uh
+        JOIN tcc_ceds_music_sample d
+        ON uh.track_name = d.track_name
+        WHERE uh.username=%s
+        GROUP BY d.genre
+        ORDER BY count DESC
+        LIMIT 3
+    """, (username,))
+    return [row[0] for row in cursor.fetchall()]
+
+# ================== COLLABORATIVE ==================
+def collaborative_recommend(username):
+    cursor.execute("""
+        SELECT DISTINCT username 
+        FROM user_history 
+        WHERE track_name IN (
+            SELECT track_name FROM user_history WHERE username=%s
+        ) AND username != %s
+    """, (username, username))
+
+    users = [row[0] for row in cursor.fetchall()]
+    songs = []
+
+    for u in users:
+        cursor.execute("""
+            SELECT track_name FROM user_history 
+            WHERE username=%s AND action='like'
+        """, (u,))
+        songs += [row[0] for row in cursor.fetchall()]
+
+    return list(set(songs))[:10]
 
 # ================== PERSONALIZED ==================
 def recommend_for_user(username):
@@ -102,25 +134,44 @@ def recommend_for_user(username):
     if not history:
         return []
 
-    recommendations = []
-    seen = set()
+    fav_genres = get_user_favorite_genres(username)
+    score_map = {}
 
     for song, action in history:
         recs = get_recommendations(song)
 
         for r in recs:
-            if r['name'] in seen:
-                continue
+            key = r['name']
 
-            # 🔥 Smart scoring
+            if key not in score_map:
+                score_map[key] = r
+
+            # 🎯 Action weights
             if action == "like":
-                r['score'] += 20
+                score_map[key]['score'] += 30
             elif action == "play":
-                r['score'] += 10
+                score_map[key]['score'] += 10
 
-            seen.add(r['name'])
-            recommendations.append(r)
+            # 🎯 Genre boost
+            if r['genre'] in fav_genres:
+                score_map[key]['score'] += 15
 
+    recommendations = list(score_map.values())
+
+    # 🔥 Add collaborative songs
+    collab = collaborative_recommend(username)
+    for song in collab:
+        recommendations.append({
+            "name": song,
+            "artist": "",
+            "genre": "",
+            "year": "",
+            "image": "https://via.placeholder.com/300",
+            "preview": "",
+            "score": 50
+        })
+
+    # sort
     recommendations = sorted(recommendations, key=lambda x: x['score'], reverse=True)
 
     return recommendations[:10]
@@ -177,7 +228,6 @@ def login():
 
         if user:
             session['user'] = username
-            session.permanent = True
             return redirect('/')
         else:
             error = "Invalid credentials"
@@ -204,13 +254,8 @@ def like():
 # ================== TRACK PLAY ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    print("🔥 track_play called")
-
     user = session.get('user')
     data_req = request.get_json()
-
-    print("User:", user)
-    print("Data:", data_req)
 
     if user and data_req:
         save_history(user, data_req.get('song'), "play")
@@ -250,8 +295,6 @@ def home():
                            trending=trending)
 
 # ================== RUN ==================
-import os
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
