@@ -4,27 +4,33 @@
     <title>Music AI 🎧</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-<!-- SIDEBAR -->
+<!-- ================= SIDEBAR ================= -->
 <div class="sidebar">
     <h2>🎧 Music AI</h2>
+
+    <!-- DARK MODE BUTTON -->
+    <button class="mode-toggle" onclick="toggleMode()">🌙 Mode</button>
+
     <a href="/">🏠 Home</a>
     <a href="/liked">❤️ Liked</a>
     <a href="/logout">🚪 Logout</a>
 </div>
 
+<!-- ================= MAIN ================= -->
 <div class="main">
 
-    <!-- SEARCH BAR -->
+    <!-- SEARCH -->
     <form method="POST" class="search-bar">
         <input type="text" name="song" placeholder="🔍 Search your favorite song..." required>
-        <button>Search</button>
+        <button type="submit">Search</button>
     </form>
 
-    <!-- RECOMMENDED -->
+    <!-- ================= RECOMMENDED ================= -->
     <div class="section">
-        <h2>✨ Recommended</h2>
+        <h2>✨ Recommended For You</h2>
 
         <div class="scroll-container">
             {% for song in recs %}
@@ -35,14 +41,14 @@
 
                 <div class="actions">
                     <button onclick="play('{{song.name}}','{{song.preview}}','{{song.artist}}')">▶</button>
-                    <button class="like" onclick="likeSong('{{song.name}}')">❤</button>
+                    <button class="like" onclick="likeSong('{{song.name}}')">❤️</button>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- HISTORY -->
+    <!-- ================= RECENT ================= -->
     <div class="section">
         <h2>🕘 Recently Played</h2>
 
@@ -59,7 +65,7 @@
         </div>
     </div>
 
-    <!-- TRENDING -->
+    <!-- ================= TRENDING ================= -->
     <div class="section">
         <h2>🔥 Trending</h2>
 
@@ -78,9 +84,10 @@
 
 </div>
 
-<!-- PLAYER -->
+<!-- ================= PLAYER ================= -->
 <div class="player">
     <p id="now">Nothing playing</p>
+    <canvas id="wave"></canvas>
     <audio id="audio" controls></audio>
 </div>
 
