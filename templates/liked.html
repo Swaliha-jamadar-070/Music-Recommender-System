@@ -1,8 +1,21 @@
-<h2>❤️ Liked Songs</h2>
-<a href="/">⬅ Back</a>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Liked Songs</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
 
-<ul>
+<body>
+
+<div class="main">
+<h1>❤️ Liked Songs</h1>
+
 {% for s in songs %}
-<li>{{s[0]}} - {{s[1]}}</li>
+<p>{{s[0]}} - {{s[1]}}</p>
 {% endfor %}
-</ul>
+
+<a href="/">⬅ Back</a>
+</div>
+
+</body>
+</html>
