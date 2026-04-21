@@ -37,7 +37,7 @@ tfidf = TfidfVectorizer(stop_words="english")
 matrix = tfidf.fit_transform(data["combined"])
 similarity = cosine_similarity(matrix)
 
-# IMAGE API
+# 🎧 GET IMAGE + PREVIEW
 def get_song_data(song, artist):
     try:
         url = f"https://itunes.apple.com/search?term={song} {artist}&limit=1"
@@ -49,7 +49,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# RECOMMEND
+# 🤖 RECOMMEND
 def recommend(song):
     match = data[data["track_name"].str.lower().str.contains(song.lower())]
     if match.empty:
@@ -72,7 +72,7 @@ def recommend(song):
         })
     return result
 
-# SAVE HISTORY
+# 💾 SAVE HISTORY
 def save(user, song, action):
     row = data[data["track_name"].str.lower().str.contains(song.lower())]
     if row.empty:
@@ -84,34 +84,68 @@ def save(user, song, action):
         (user, row["track_name"], row["artist_name"], action)
     )
 
-# ROUTES
+# 🏠 HOME
 @app.route("/", methods=["GET","POST"])
 def home():
     if "user" not in session:
         return redirect("/login")
 
+    user = session["user"]
     recs = []
+
     if request.method == "POST":
         recs = recommend(request.form["song"])
 
+    # HISTORY
     cursor.execute("""
         SELECT track_name, artist_name 
         FROM user_history 
         WHERE username=%s 
         ORDER BY id DESC LIMIT 10
-    """,(session["user"],))
-    history = cursor.fetchall()
+    """,(user,))
+    
+    history_raw = cursor.fetchall()
+    history = []
 
+    for h in history_raw:
+        img, preview = get_song_data(h[0], h[1])
+        history.append({
+            "name": h[0],
+            "artist": h[1],
+            "image": img,
+            "preview": preview
+        })
+
+    # TRENDING
     cursor.execute("""
         SELECT track_name, COUNT(*) 
         FROM user_history 
         GROUP BY track_name 
         ORDER BY COUNT(*) DESC LIMIT 10
     """)
-    trending = [x[0] for x in cursor.fetchall()]
+    
+    trending_raw = cursor.fetchall()
+    trending = []
 
-    return render_template("index.html", recs=recs, history=history, trending=trending)
+    for t in trending_raw:
+        row = data[data["track_name"].str.lower().str.contains(t[0].lower())]
+        if not row.empty:
+            artist = row.iloc[0]["artist_name"]
+            img, preview = get_song_data(t[0], artist)
 
+            trending.append({
+                "name": t[0],
+                "artist": artist,
+                "image": img,
+                "preview": preview
+            })
+
+    return render_template("index.html",
+                           recs=recs,
+                           history=history,
+                           trending=trending)
+
+# LOGIN
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -124,18 +158,21 @@ def logout():
     session.clear()
     return redirect("/login")
 
+# PLAY
 @app.route("/play", methods=["POST"])
 def play():
     data_req = request.get_json()
     save(session["user"], data_req["song"], "play")
     return jsonify({"ok": True})
 
+# LIKE
 @app.route("/like", methods=["POST"])
 def like():
     data_req = request.get_json()
     save(session["user"], data_req["song"], "like")
     return jsonify({"ok": True})
 
+# LIKED PAGE
 @app.route("/liked")
 def liked():
     cursor.execute("""
@@ -144,8 +181,20 @@ def liked():
         WHERE username=%s AND action='like'
         ORDER BY id DESC
     """,(session["user"],))
+    
     songs = cursor.fetchall()
-    return render_template("liked.html", songs=songs)
+    result = []
+
+    for s in songs:
+        img, preview = get_song_data(s[0], s[1])
+        result.append({
+            "name": s[0],
+            "artist": s[1],
+            "image": img,
+            "preview": preview
+        })
+
+    return render_template("liked.html", songs=result)
 
 if __name__ == "__main__":
     app.run(debug=True)
