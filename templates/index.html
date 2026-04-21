@@ -1,235 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Music App 🎧</title>
-<link rel="icon" href="data:,">
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
-
-<style>
-body{
-    font-family:Poppins;
-    background:linear-gradient(to right,#0f2027,#203a43,#2c5364);
-    color:white;
-    margin:0;
-}
-
-/* HEADER */
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:20px 40px;
-    background:#000;
-}
-
-/* CENTER SEARCH */
-.search-section{
-    display:flex;
-    justify-content:center;
-    margin:40px 0;
-}
-
-.search-box{
-    width:50%;
-    display:flex;
-    background:white;
-    border-radius:50px;
-    overflow:hidden;
-}
-
-.search-box input{
-    flex:1;
-    padding:15px;
-    border:none;
-    outline:none;
-    font-size:16px;
-}
-
-.search-box button{
-    padding:15px 25px;
-    border:none;
-    background:#1db954;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-/* SECTION */
-.section{
-    padding:30px 40px;
-}
-
-/* GRID */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-    gap:20px;
-}
-
-/* CARD */
-.card{
-    background:#181818;
-    padding:15px;
-    border-radius:12px;
-    transition:0.3s;
-}
-
-.card:hover{
-    transform:scale(1.05);
-    background:#282828;
-}
-
-.cover{
-    width:100%;
-    height:180px;
-    border-radius:10px;
-    object-fit:cover;
-}
-
-/* BUTTONS */
-.btn{
-    margin-top:8px;
-    padding:8px 12px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-.play{ background:#1db954; color:white; }
-.like{ background:#333; color:white; }
-
-/* HISTORY STYLE (LIKE YOUTUBE) */
-.history-item{
-    display:flex;
-    align-items:center;
-    background:#181818;
-    margin-bottom:10px;
-    padding:10px;
-    border-radius:8px;
-    cursor:pointer;
-}
-
-.history-item img{
-    width:60px;
-    height:60px;
-    border-radius:6px;
-    margin-right:15px;
-}
-
-/* PLAYER */
-.player{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:#111;
-    padding:10px;
-}
-</style>
-
-<script>
-function playSong(name, artist, preview){
-    fetch('/track_play',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    });
-
-    let player = document.getElementById("player");
-    let now = document.getElementById("now");
-
-    if(preview){
-        player.src = preview;
-        player.play();
-    }else{
-        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
-    }
-
-    now.innerText = "🎶 " + name + " - " + artist;
-}
-
-function likeSong(name){
-    fetch('/like',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    });
-}
-</script>
-
+<title>Music App</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-<!-- HEADER -->
-<div class="header">
-    <h2>🎧 Music App</h2>
-    <a href="/logout" style="color:white;">Logout</a>
+<div class="sidebar">
+    <h2>🎵 Music</h2>
+    <a href="/">Home</a>
+    <a href="/liked">❤️ Liked</a>
+    <a href="/logout">Logout</a>
 </div>
 
-<!-- SEARCH -->
-<div class="search-section">
-<form method="POST" class="search-box">
-    <input name="song" placeholder="Search songs like Spotify..." required>
+<div class="main">
+
+<h1>Music Recommender</h1>
+
+<form method="POST" class="search">
+    <input name="song" placeholder="Search song..." required>
     <button>Search</button>
 </form>
-</div>
 
-<!-- RECOMMENDED -->
-<div class="section">
-<h2>🔥 Recommended</h2>
-<div class="grid">
-{% for song in recommendations %}
+<h2>Recommended</h2>
+<div class="row">
+{% for s in recs %}
 <div class="card">
-<img src="{{ song.image }}" class="cover">
-<h4>{{ song.name }}</h4>
-<p>{{ song.artist }}</p>
-
-<button class="btn play"
-onclick="playSong('{{ song.name }}','{{ song.artist }}','{{ song.preview }}')">
-▶ Play</button>
-
-<button class="btn like"
-onclick="likeSong('{{ song.name }}')">
-❤️ Like</button>
-</div>
-{% endfor %}
-</div>
-</div>
-
-<!-- HISTORY (UPGRADED) -->
-<div class="section">
-<h2>🕒 Recently Played</h2>
-
-{% for song in history %}
-<div class="history-item"
-onclick="playSong('{{ song[0] }}','{{ song[1] }}','')">
-
-<img src="https://via.placeholder.com/100">
-<div>
-<b>{{ song[0] }}</b><br>
-<small>{{ song[1] }}</small>
-</div>
-
+<img src="{{s.image}}">
+<h3>{{s.name}}</h3>
+<p>{{s.artist}}</p>
+<button onclick="play('{{s.name}}','{{s.preview}}')">▶</button>
+<button onclick="like('{{s.name}}')">❤️</button>
 </div>
 {% endfor %}
 </div>
 
-<!-- TRENDING -->
-<div class="section">
-<h2>🔥 Trending</h2>
-<ul>
+<h2>Recently Played</h2>
+<div class="row">
+{% for h in history %}
+<div class="small-card">{{h[0]}} - {{h[1]}}</div>
+{% endfor %}
+</div>
+
+<h2>Trending</h2>
+<div class="row">
 {% for t in trending %}
-<li>{{ t }}</li>
+<div class="small-card">{{t}}</div>
 {% endfor %}
-</ul>
 </div>
 
-<!-- PLAYER -->
-<div class="player">
-<p id="now">No song playing</p>
 <audio id="player" controls></audio>
+
 </div>
+
+<script src="/static/script.js"></script>
 
 </body>
 </html>
