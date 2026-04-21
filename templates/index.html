@@ -1,65 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Music Recommender 🎵</title>
-<link rel="icon" href="data:,">
+<title>Music Recommender</title>
 
 <style>
 body{
-    font-family:Arial;
     background:#0f2027;
     color:white;
-    margin:0;
-    padding-bottom:100px;
+    font-family:Arial;
 }
+
 .header{
+    background:black;
+    padding:15px;
     display:flex;
     justify-content:space-between;
+}
+
+.section{
     padding:20px;
-    background:#000;
 }
-.section{ padding:20px; }
+
 .grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    display:flex;
     gap:20px;
+    flex-wrap:wrap;
 }
+
 .card{
     background:#1c1c1c;
-    padding:15px;
+    padding:10px;
+    width:200px;
     border-radius:10px;
-    transition:0.3s;
 }
-.card:hover{ transform:scale(1.05); }
-.cover{
+
+img{
     width:100%;
-    height:200px;
-    object-fit:cover;
+    height:150px;
 }
+
 button{
     margin:5px;
-    padding:8px 12px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-}
-.play-btn{ background:#28a745; color:white; }
-.like-btn{ background:#444; color:white; }
-.music-player{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:#111;
-    padding:10px;
+    padding:5px;
 }
 </style>
 
 <script>
-function playSong(btn){
-    let preview = btn.dataset.preview;
-    let name = btn.dataset.name;
-    let artist = btn.dataset.artist;
-
+function playSong(name, preview){
     fetch('/track_play',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -67,25 +54,21 @@ function playSong(btn){
     });
 
     let player = document.getElementById("player");
-    let now = document.getElementById("nowPlaying");
 
     if(preview){
         player.src = preview;
         player.play();
-        now.innerText = "Now Playing: " + name;
     }else{
-        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
+        window.open("https://youtube.com/results?search_query="+name);
     }
 }
 
-function likeSong(btn){
-    let name = btn.dataset.name;
-
+function likeSong(name){
     fetch('/like',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:name})
-    });
+    }).then(()=>alert("Liked!"));
 }
 </script>
 </head>
@@ -93,73 +76,55 @@ function likeSong(btn){
 <body>
 
 <div class="header">
-<h2>🎧 Music Recommender</h2>
+<h2>🎧 Music App</h2>
 <a href="/logout" style="color:white;">Logout</a>
 </div>
 
 <div class="section">
 <form method="POST">
-<input name="song" placeholder="Search song..." required>
+<input name="song" placeholder="Search song">
 <button>Recommend</button>
 </form>
 </div>
 
-<!-- 🔥 TRENDING -->
+<!-- RECOMMENDED -->
 <div class="section">
-<h3>🔥 Trending</h3>
+<h3>Recommended</h3>
 <div class="grid">
-{% for t in trending %}
-<div class="card">{{ t }}</div>
+{% for s in recommendations %}
+<div class="card">
+<img src="{{s.image}}">
+<p>{{s.name}}</p>
+<p>{{s.artist}}</p>
+
+<button onclick="playSong('{{s.name}}','{{s.preview}}')">▶ Play</button>
+<button onclick="likeSong('{{s.name}}')">❤️ Like</button>
+</div>
 {% endfor %}
 </div>
 </div>
 
-<!-- 🕒 HISTORY -->
+<!-- HISTORY -->
 <div class="section">
-<h3>🕒 Your Activity</h3>
-<div class="grid">
+<h3>Recently Played</h3>
+<ul>
 {% for h in history %}
-<div class="card">
-<h4>{{ h[0] }}</h4>
-<p>{{ h[1] }} ({{ h[2] }})</p>
-</div>
+<li>{{h[0]}} - {{h[1]}}</li>
 {% endfor %}
-</div>
+</ul>
 </div>
 
-<!-- 🎯 RECOMMEND -->
+<!-- TRENDING -->
 <div class="section">
-<h3>✨ Recommended</h3>
-<div class="grid">
-{% for song in recommendations %}
-<div class="card">
-
-<img src="{{ song.image }}" class="cover">
-
-<h3>{{ song.name }}</h3>
-<p>{{ song.artist }}</p>
-
-<button class="play-btn"
-onclick="playSong(this)"
-data-preview="{{ song.preview }}"
-data-name="{{ song.name }}"
-data-artist="{{ song.artist }}">
-▶ Play
-</button>
-
-<button class="like-btn"
-onclick="likeSong(this)"
-data-name="{{ song.name }}">
-❤️
-</button>
-
-</div>
+<h3>Trending</h3>
+<ul>
+{% for t in trending %}
+<li>{{t}}</li>
 {% endfor %}
-</div>
+</ul>
 </div>
 
-<div class="music-player">
-<p id="nowPlaying">No song</p>
+<div class="section">
 <audio id="player" controls></audio>
 </div>
 
