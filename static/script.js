@@ -1,5 +1,4 @@
 function play(name, preview, artist){
-
     fetch("/play",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -16,4 +15,12 @@ function play(name, preview, artist){
     }else{
         window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
     }
+}
+
+function likeSong(name){
+    fetch("/like",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({song:name})
+    });
 }
