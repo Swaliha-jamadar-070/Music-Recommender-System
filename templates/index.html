@@ -1,65 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Music AI</title>
-<link rel="stylesheet" href="/static/style.css">
+    <title>Music AI 🎧</title>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
+<!-- 🌗 THEME TOGGLE -->
+<div class="toggle-btn" onclick="toggleTheme()">🌗</div>
+
+<!-- SIDEBAR -->
 <div class="sidebar">
-<h2>🎧 Music AI</h2>
-
-<button onclick="toggleMode()">🌙 Mode</button>
-
-<a href="/">Home</a>
-<a href="/logout">Logout</a>
+    <h2>🎧 Music AI</h2>
+    <a href="/">🏠 Home</a>
+    <a href="/liked">❤️ Liked</a>
+    <a href="/logout">🚪 Logout</a>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
-<form method="POST" class="search-bar">
-<input name="song" placeholder="Search song..." required>
-<button>Search</button>
-<button type="button" onclick="startVoice()">🎤</button>
-</form>
+    <!-- 🔍 SEARCH -->
+    <form method="POST" class="search-bar">
+        <input id="searchInput" type="text" name="song" placeholder="Search any song..." required>
+        <button type="submit">Search</button>
+        <div class="mic-btn" onclick="startVoice()">🎤</div>
+    </form>
 
-<h2>Recommended</h2>
-<div class="row">
-{% for s in recs %}
-<div class="card">
-<img src="{{s.image}}">
-<h4>{{s.name}}</h4>
+    <!-- ✨ RECOMMENDED -->
+    <div class="section">
+        <h2>✨ Recommended</h2>
 
-<button onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">▶</button>
-<button onclick="likeSong('{{s.name}}')">❤️</button>
-<button onclick="addToPlaylist('{{s.name}}','{{s.preview}}','{{s.artist}}')">➕</button>
-</div>
-{% endfor %}
+        <div class="scroll-container">
+            {% for song in recs %}
+            <div class="card">
+                <img src="{{ song.image }}">
+                <h4>{{ song.name }}</h4>
+                <p>{{ song.artist }}</p>
+
+                <div class="actions">
+                    <button onclick="play('{{song.name}}','{{song.preview}}','{{song.artist}}')">▶</button>
+                    <button onclick="likeSong('{{song.name}}')">❤️</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 🕘 HISTORY -->
+    <div class="section">
+        <h2>🕘 Recently Played</h2>
+
+        <div class="scroll-container">
+            {% for song in history %}
+            <div class="card">
+                <img src="{{ song.image }}">
+                <h4>{{ song.name }}</h4>
+                <p>{{ song.artist }}</p>
+
+                <div class="actions">
+                    <button onclick="play('{{song.name}}','{{song.preview}}','{{song.artist}}')">▶</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 🔥 TRENDING -->
+    <div class="section">
+        <h2>🔥 Trending</h2>
+
+        <div class="scroll-container">
+            {% for song in trending %}
+            <div class="card">
+                <img src="{{ song.image }}">
+                <h4>{{ song.name }}</h4>
+                <p>{{ song.artist }}</p>
+
+                <div class="actions">
+                    <button onclick="play('{{song.name}}','{{song.preview}}','{{song.artist}}')">▶</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
 </div>
 
-<h2>History</h2>
-<div class="row">
-{% for s in history %}
-<div class="card" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">
-<img src="{{s.image}}">
-<h4>{{s.name}}</h4>
-</div>
-{% endfor %}
-</div>
-
-<!-- CHATBOT -->
-<div class="chat">
-<input id="chatInput">
-<button onclick="sendMessage()">Ask</button>
-<div id="chatBox"></div>
-</div>
-
-</div>
-
+<!-- 🎧 PLAYER -->
 <div class="player">
-<p id="now"></p>
-<audio id="audio" controls></audio>
+    <p id="now">Nothing playing</p>
+    <audio id="audio" controls></audio>
+    <div class="waveform"></div>
 </div>
 
 <script src="/static/script.js"></script>
