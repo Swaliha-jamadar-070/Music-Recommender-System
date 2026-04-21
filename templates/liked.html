@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Liked Songs</title>
+<title>Liked</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 
@@ -12,10 +12,11 @@
 
 <div class="scroll-container">
 {% for s in songs %}
-<div class="card" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">
+<div class="card">
 <img src="{{s.image}}">
-<h3>{{s.name}}</h3>
+<h4>{{s.name}}</h4>
 <p>{{s.artist}}</p>
+<button onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">▶</button>
 </div>
 {% endfor %}
 </div>
