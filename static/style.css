@@ -1,141 +1,55 @@
 body{
     margin:0;
-    font-family:'Poppins', sans-serif;
-    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    font-family:Poppins;
+    background:#121212;
     color:white;
     display:flex;
 }
 
-/* SIDEBAR */
 .sidebar{
-    width:220px;
-    height:100vh;
-    background:rgba(0,0,0,0.7);
-    backdrop-filter: blur(10px);
+    width:200px;
+    background:black;
     padding:20px;
-    position:fixed;
-}
-
-.sidebar h2{
-    margin-bottom:30px;
 }
 
 .sidebar a{
     display:block;
     color:white;
-    margin:15px 0;
-    text-decoration:none;
-    transition:0.3s;
+    margin:10px 0;
 }
 
-.sidebar a:hover{
-    color:#1db954;
-}
-
-/* MAIN */
 .main{
-    margin-left:240px;
-    padding:30px;
-    width:100%;
+    flex:1;
+    padding:20px;
 }
 
-/* HERO SEARCH */
-.search-box{
-    text-align:center;
-    margin-top:40px;
-}
-
-.search-box input{
-    width:400px;
-    padding:15px;
-    border-radius:30px;
-    border:none;
-    outline:none;
-    font-size:16px;
-}
-
-.search-box button{
-    padding:15px 20px;
-    border-radius:30px;
-    border:none;
-    background:#1db954;
-    color:white;
-    cursor:pointer;
-}
-
-/* ROW */
 .row{
     display:flex;
-    overflow-x:auto;
     gap:20px;
-    padding:10px 0;
+    overflow-x:auto;
 }
 
-/* CARD */
 .card{
-    min-width:220px;
-    background:rgba(255,255,255,0.05);
-    backdrop-filter: blur(8px);
-    border-radius:15px;
+    min-width:200px;
+    background:#1c1c1c;
     padding:10px;
-    transition:0.3s;
+    border-radius:10px;
     cursor:pointer;
-}
-
-.card:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 20px #1db954;
 }
 
 .card img{
     width:100%;
-    border-radius:10px;
 }
 
-.card h3{
-    margin:10px 0 5px;
-}
-
-.card p{
-    font-size:14px;
-    color:#ccc;
-}
-
-/* BUTTONS */
-.card button{
-    margin-top:5px;
-    padding:8px 12px;
-    border:none;
-    border-radius:20px;
-    cursor:pointer;
-}
-
-.play{background:#1db954;color:white;}
-.like{background:#333;color:white;}
-
-/* SMALL CARD (HISTORY) */
-.small-card{
-    min-width:200px;
-    background:#222;
-    padding:10px;
-    border-radius:10px;
-    cursor:pointer;
-    transition:0.3s;
-}
-
-.small-card:hover{
-    background:#1db954;
-}
-
-/* PLAYER */
-.player-bar{
+.player{
     position:fixed;
     bottom:0;
-    left:240px;
-    width:calc(100% - 240px);
-    background:#111;
+    width:100%;
+    background:#000;
     padding:10px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+}
+
+.login{
+    margin:auto;
+    margin-top:200px;
 }
