@@ -24,4 +24,6 @@ function likeSong(name){
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({song:name})
     });
+
+    alert("❤️ Liked!");
 }
