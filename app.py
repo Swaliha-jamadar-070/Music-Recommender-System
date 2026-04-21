@@ -8,7 +8,7 @@ import mysql.connector
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ================== MYSQL CONNECTION ==================
+# ================== MYSQL ==================
 db = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -17,7 +17,7 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor()
 
-# ================== LOAD DATASET ==================
+# ================== LOAD DATA ==================
 data = pd.read_csv('tcc_ceds_music_sample.csv')
 
 for col in ['genre', 'artist_name', 'track_name', 'release_date']:
@@ -29,7 +29,7 @@ tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(data['combined_features'])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-# ================== GET SONG IMAGE ==================
+# ================== IMAGE ==================
 def get_song_data(song, artist):
     try:
         url = f"https://itunes.apple.com/search?term={song} {artist}&limit=1"
@@ -41,7 +41,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# ================== CONTENT RECOMMEND ==================
+# ================== RECOMMEND ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
 
@@ -70,8 +70,12 @@ def get_recommendations(song_title):
 # ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
     try:
-        row = data[data['track_name'].str.lower() == song_name.lower()]
+        print("👉 Saving:", username, song_name)
+
+        row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
+
         if row.empty:
+            print("❌ Song not found in dataset")
             return
 
         row = row.iloc[0]
@@ -81,8 +85,11 @@ def save_history(username, song_name, action):
             (username, row['track_name'], row['artist_name'], action)
         )
         db.commit()
+
+        print("✅ Inserted into DB")
+
     except Exception as e:
-        print("Error:", e)
+        print("❌ Error:", e)
 
 # ================== USER HISTORY ==================
 def get_user_history(username):
@@ -92,7 +99,7 @@ def get_user_history(username):
     )
     return cursor.fetchall()
 
-# ================== PERSONALIZED RECOMMEND ==================
+# ================== PERSONALIZED ==================
 def recommend_for_user(username):
     history = get_user_history(username)
 
@@ -160,6 +167,7 @@ def login():
 
         if user:
             session['user'] = username
+            session.permanent = True   # 🔥 FIXED
             return redirect('/')
         else:
             error = "Invalid credentials"
@@ -169,28 +177,38 @@ def login():
 # ================== LOGOUT ==================
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    session.clear()
     return redirect('/login')
 
 # ================== LIKE ==================
 @app.route('/like', methods=['POST'])
 def like():
     user = session.get('user')
-    song = request.json.get('song')
+    data = request.get_json()
 
-    if user:
-        save_history(user, song, "like")
+    print("❤️ Like called:", user, data)
+
+    if user and data:
+        save_history(user, data.get('song'), "like")
 
     return jsonify({"status":"ok"})
 
 # ================== TRACK PLAY ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    user = session.get('user')
-    song = request.json.get('song')
+    print("🔥 track_play called")
 
-    if user:
-        save_history(user, song, "play")
+    user = session.get('user')
+    data = request.get_json()
+
+    print("User:", user)
+    print("Data:", data)
+
+    if user and data:
+        save_history(user, data.get('song'), "play")
+        print("✅ Saved")
+    else:
+        print("❌ Not saved")
 
     return jsonify({"status":"ok"})
 
