@@ -16,7 +16,6 @@ body{
     padding-bottom:100px;
 }
 
-/* HEADER */
 .header{
     display:flex;
     justify-content:space-between;
@@ -25,10 +24,8 @@ body{
     background:rgba(0,0,0,0.7);
 }
 
-/* HERO */
 .hero{ text-align:center; padding:60px 20px 40px; }
 
-/* INPUT */
 input{
     padding:14px;
     width:320px;
@@ -38,7 +35,6 @@ input{
     color:white;
 }
 
-/* BUTTON */
 button{
     padding:10px;
     border-radius:20px;
@@ -48,10 +44,8 @@ button{
     cursor:pointer;
 }
 
-/* SECTION */
 .section{ padding:30px 40px; }
 
-/* GRID */
 .popular-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
@@ -64,7 +58,6 @@ button{
     gap:25px;
 }
 
-/* CARD */
 .card{
     background:#1c1c1c;
     padding:15px;
@@ -77,7 +70,6 @@ button{
     object-fit:cover;
 }
 
-/* PLAYER */
 .music-player{
     position:fixed;
     bottom:0;
@@ -88,6 +80,7 @@ button{
 </style>
 
 <script>
+
 // 🔍 SEARCH
 async function searchSongs(){
     let query = document.getElementById("songInput").value;
@@ -120,25 +113,30 @@ function likeSong(song){
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:song})
-    });
+    })
+    .then(res=>res.json())
+    .then(data=>console.log("❤️ liked:", data));
 }
 
-// ▶ PLAY (FIXED)
+// ▶ PLAY (FIXED + DEBUG)
 function playSong(preview, name, artist){
 
+    console.log("🔥 FUNCTION CALLED");
     console.log("🎵 Playing:", name);
 
-    // 🔥 SEND DATA TO BACKEND
     fetch('/track_play',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:name})
-    });
+    })
+    .then(res => res.json())
+    .then(data => console.log("✅ API:", data))
+    .catch(err => console.log("❌ ERROR:", err));
 
     let player = document.getElementById("player");
     let now = document.getElementById("nowPlaying");
 
-    if(preview){
+    if(preview && preview !== "None"){
         player.src = preview;
         player.play();
         now.innerText = "🎶 Now Playing: " + name;
@@ -146,6 +144,7 @@ function playSong(preview, name, artist){
         window.open(`https://www.youtube.com/results?search_query=${name} ${artist}`, "_blank");
     }
 }
+
 </script>
 
 </head>
@@ -162,7 +161,7 @@ function playSong(preview, name, artist){
 
     <form method="POST">
         <input id="songInput" name="song" onkeyup="searchSongs()" placeholder="Search song..." required>
-        <button>Recommend</button>
+        <button type="submit">Recommend</button>
     </form>
 
     <ul id="suggestions"></ul>
@@ -180,7 +179,7 @@ function playSong(preview, name, artist){
 </div>
 </div>
 
-<!-- 🕒 RECENT -->
+<!-- 🕒 USER HISTORY -->
 <div class="section">
 <h2>📊 Your Activity</h2>
 <div class="popular-grid">
@@ -217,8 +216,12 @@ function playSong(preview, name, artist){
 <h3>{{ song.name }}</h3>
 <p>{{ song.artist }}</p>
 
-<button onclick="playSong('{{ song.preview }}','{{ song.name }}','{{ song.artist }}')">▶ Play</button>
-<button onclick="likeSong('{{ song.name }}')">❤️</button>
+<!-- ✅ FIXED BUTTON -->
+<button onclick="playSong(`{{ song.preview }}`, `{{ song.name }}`, `{{ song.artist }}`)">
+▶ Play
+</button>
+
+<button onclick="likeSong(`{{ song.name }}`)">❤️</button>
 
 </div>
 {% endfor %}
