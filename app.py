@@ -9,9 +9,13 @@ import os
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+# ✅ IMPORTANT FOR RENDER (sessions fix)
+app.config['SESSION_COOKIE_SAMESITE'] = "None"
+app.config['SESSION_COOKIE_SECURE'] = True
+
 # ================== MYSQL ==================
 db = mysql.connector.connect(
-    host="localhost",
+    host="localhost",   # ⚠️ change if using Render DB
     user="root",
     password="",
     database="music_recommender"
@@ -68,13 +72,13 @@ def get_recommendations(song_title):
         })
     return results
 
-# ================== SAVE HISTORY (FIXED DEBUG) ==================
+# ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
-    print("🔥 SAVE HISTORY CALLED:", username, song_name, action)
+    print("🔥 SAVE:", username, song_name, action)
 
     row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
     if row.empty:
-        print("❌ SONG NOT FOUND IN DATASET")
+        print("❌ Song not found")
         return
 
     row = row.iloc[0]
@@ -96,15 +100,6 @@ def get_user_history(username):
         LIMIT 10
     """, (username,))
     return cursor.fetchall()
-
-# ================== RECENT ==================
-def get_recently_played(username):
-    cursor.execute("""
-        SELECT track_name FROM user_history
-        WHERE username=%s AND action='play'
-        ORDER BY id DESC LIMIT 5
-    """, (username,))
-    return [r[0] for r in cursor.fetchall()]
 
 # ================== TRENDING ==================
 def get_trending():
@@ -141,7 +136,7 @@ def logout():
 # ================== ACTION ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    print("🔥 TRACK PLAY API HIT")
+    print("🔥 API HIT")
 
     user = session.get('user')
     data_req = request.get_json()
