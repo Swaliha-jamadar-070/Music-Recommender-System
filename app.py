@@ -3,24 +3,34 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import requests
-import mysql.connector
+import psycopg2
 import os
 
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# ✅ IMPORTANT FOR RENDER (sessions fix)
+# ✅ Fix session for Render
 app.config['SESSION_COOKIE_SAMESITE'] = "None"
 app.config['SESSION_COOKIE_SECURE'] = True
 
-# ================== MYSQL ==================
-db = mysql.connector.connect(
-    host="localhost",   # ⚠️ change if using Render DB
-    user="root",
-    password="",
-    database="music_recommender"
+# ================== DATABASE (POSTGRESQL - RENDER) ==================
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+conn = psycopg2.connect(DATABASE_URL)
+conn.autocommit = True
+cursor = conn.cursor()
+
+# ================== CREATE TABLE ==================
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS user_history (
+    id SERIAL PRIMARY KEY,
+    username TEXT,
+    track_name TEXT,
+    artist_name TEXT,
+    action TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-cursor = db.cursor()
+""")
 
 # ================== LOAD DATA ==================
 data = pd.read_csv('tcc_ceds_music_sample.csv')
@@ -64,8 +74,6 @@ def get_recommendations(song_title):
         results.append({
             "name": row['track_name'],
             "artist": row['artist_name'],
-            "genre": row['genre'],
-            "year": row['release_date'],
             "image": image,
             "preview": preview,
             "score": score * 100
@@ -78,18 +86,17 @@ def save_history(username, song_name, action):
         row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
 
         if row.empty:
-            print("❌ Song not found in dataset:", song_name)
+            print("❌ Song not found:", song_name)
             return
 
         row = row.iloc[0]
-
-        print("✅ Saving:", row['track_name'], username)
 
         cursor.execute(
             "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
             (username, row['track_name'], row['artist_name'], action)
         )
-        db.commit()
+
+        print("✅ Saved:", row['track_name'])
 
     except Exception as e:
         print("🔥 DB ERROR:", e)
@@ -108,7 +115,7 @@ def get_user_history(username):
 # ================== TRENDING ==================
 def get_trending():
     cursor.execute("""
-        SELECT track_name, COUNT(*) 
+        SELECT track_name, COUNT(*)
         FROM user_history
         GROUP BY track_name
         ORDER BY COUNT(*) DESC
@@ -116,20 +123,22 @@ def get_trending():
     """)
     return [r[0] for r in cursor.fetchall()]
 
+# ================== PERSONAL RECOMMEND ==================
+def recommend_for_user(username):
+    history = get_user_history(username)
+
+    if not history:
+        return []
+
+    last_song = history[0][0]  # last played
+    return get_recommendations(last_song)
+
 # ================== AUTH ==================
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
-        u = request.form['username']
-        p = request.form['password']
-
-        cursor.execute("SELECT * FROM users WHERE username=%s AND password=%s",(u,p))
-        if cursor.fetchone():
-            session['user'] = u
-            return redirect('/')
-        else:
-            return "Invalid login"
-
+        session['user'] = request.form['username']
+        return redirect('/')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -140,13 +149,10 @@ def logout():
 # ================== ACTION ==================
 @app.route('/track_play', methods=['POST'])
 def track_play():
-    print("🔥 API HIT")
-
     user = session.get('user')
     data_req = request.get_json()
 
-    print("USER:", user)
-    print("DATA:", data_req)
+    print("🔥 PLAY:", user, data_req)
 
     if user and data_req:
         save_history(user, data_req.get('song'), "play")
@@ -178,7 +184,10 @@ def home():
 
     user = session['user']
 
-    recs = []
+    # 🔥 personalized recommendations
+    recs = recommend_for_user(user)
+
+    # 🔍 manual search
     if request.method == 'POST':
         recs = get_recommendations(request.form['song'])
 
@@ -189,7 +198,6 @@ def home():
                            top_songs=data['track_name'].value_counts().head(10).index.tolist())
 
 # ================== RUN ==================
-import os
-
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
