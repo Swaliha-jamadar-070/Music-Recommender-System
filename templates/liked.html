@@ -10,12 +10,20 @@
 <div class="main">
 <h1>❤️ Liked Songs</h1>
 
+<div class="row">
 {% for s in songs %}
-<p>{{s[0]}} - {{s[1]}}</p>
+<div class="card" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">
+<img src="{{s.image}}">
+<h3>{{s.name}}</h3>
+<p>{{s.artist}}</p>
+</div>
 {% endfor %}
+</div>
 
 <a href="/">⬅ Back</a>
 </div>
+
+<script src="/static/script.js"></script>
 
 </body>
 </html>
