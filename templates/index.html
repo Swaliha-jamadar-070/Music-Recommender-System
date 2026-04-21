@@ -64,57 +64,61 @@ button{
 </style>
 
 <script>
+document.addEventListener("DOMContentLoaded", function(){
 
-// ▶ PLAY SONG
-function playSong(btn){
+    function playSong(btn){
+        let preview = JSON.parse(btn.dataset.preview || "null");
+        let name = JSON.parse(btn.dataset.name || "null");
+        let artist = JSON.parse(btn.dataset.artist || "null");
 
-    let preview = JSON.parse(btn.dataset.preview || "null");
-    let name = JSON.parse(btn.dataset.name || "null");
-    let artist = JSON.parse(btn.dataset.artist || "null");
+        console.log("🔥 FUNCTION CALLED");
+        console.log("🎵 Playing:", name);
 
-    console.log("🔥 FUNCTION CALLED");
-    console.log("🎵 Playing:", name);
+        fetch('/track_play',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({song:name})
+        })
+        .then(res => res.json())
+        .then(data => console.log("✅ API:", data))
+        .catch(err => console.log("❌ ERROR:", err));
 
-    // 🔥 CALL BACKEND
-    fetch('/track_play',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    })
-    .then(res => res.json())
-    .then(data => console.log("✅ API:", data))
-    .catch(err => console.log("❌ ERROR:", err));
+        let player = document.getElementById("player");
+        let now = document.getElementById("nowPlaying");
 
-    let player = document.getElementById("player");
-    let now = document.getElementById("nowPlaying");
-
-    if(preview){
-        player.src = preview;
-        player.play();
-        now.innerText = "🎶 Now Playing: " + name;
-    }else{
-        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
+        if(preview){
+            player.src = preview;
+            player.play();
+            now.innerText = "🎶 Now Playing: " + name;
+        }else{
+            window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
+        }
     }
-}
 
+    function likeSong(btn){
+        let name = JSON.parse(btn.dataset.name || "null");
 
-// ❤️ LIKE SONG
-function likeSong(btn){
+        fetch('/like',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({song:name})
+        })
+        .then(res => res.json())
+        .then(data => console.log("❤️ liked:", data))
+        .catch(err => console.log("❌ ERROR:", err));
+    }
 
-    let name = JSON.parse(btn.dataset.name || "null");
+    // 🔥 attach events manually (BEST WAY)
+    document.querySelectorAll(".play-btn").forEach(btn=>{
+        btn.addEventListener("click", ()=>playSong(btn));
+    });
 
-    fetch('/like',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    })
-    .then(res => res.json())
-    .then(data => console.log("❤️ liked:", data))
-    .catch(err => console.log("❌ ERROR:", err));
-}
+    document.querySelectorAll(".like-btn").forEach(btn=>{
+        btn.addEventListener("click", ()=>likeSong(btn));
+    });
 
+});
 </script>
-
 </head>
 
 <body>
