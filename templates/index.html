@@ -109,28 +109,32 @@ async function searchSongs(){
 
 // ❤️ LIKE
 function likeSong(song){
+    console.log("❤️ Like clicked:", song);
+
     fetch('/like',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:song})
     })
     .then(res=>res.json())
-    .then(data=>console.log("❤️ liked:", data));
+    .then(data=>console.log("✅ LIKE API:", data))
+    .catch(err=>console.log("❌ ERROR:", err));
 }
 
-// ▶ PLAY (FIXED + DEBUG)
+// ▶ PLAY (FIXED)
 function playSong(preview, name, artist){
 
     console.log("🔥 FUNCTION CALLED");
     console.log("🎵 Playing:", name);
 
+    // 🔥 SEND TO BACKEND
     fetch('/track_play',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:name})
     })
     .then(res => res.json())
-    .then(data => console.log("✅ API:", data))
+    .then(data => console.log("✅ PLAY API:", data))
     .catch(err => console.log("❌ ERROR:", err));
 
     let player = document.getElementById("player");
@@ -179,7 +183,7 @@ function playSong(preview, name, artist){
 </div>
 </div>
 
-<!-- 🕒 USER HISTORY -->
+<!-- 📊 HISTORY -->
 <div class="section">
 <h2>📊 Your Activity</h2>
 <div class="popular-grid">
@@ -216,12 +220,12 @@ function playSong(preview, name, artist){
 <h3>{{ song.name }}</h3>
 <p>{{ song.artist }}</p>
 
-<!-- ✅ FIXED BUTTON -->
-<button onclick="playSong(`{{ song.preview }}`, `{{ song.name }}`, `{{ song.artist }}`)">
+<!-- ✅ FIXED BUTTONS -->
+<button onclick="playSong('{{ song.preview }}','{{ song.name }}','{{ song.artist }}')">
 ▶ Play
 </button>
 
-<button onclick="likeSong(`{{ song.name }}`)">❤️</button>
+<button onclick="likeSong('{{ song.name }}')">❤️</button>
 
 </div>
 {% endfor %}
