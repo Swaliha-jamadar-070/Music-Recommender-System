@@ -2,93 +2,59 @@
 <html>
 <head>
 <title>Music App</title>
-<style>
-body{background:#0f2027;color:white;font-family:Arial}
-.header{background:black;padding:15px;display:flex;justify-content:space-between}
-.grid{display:flex;gap:20px;flex-wrap:wrap}
-.card{background:#1c1c1c;padding:10px;width:200px;border-radius:10px}
-img{width:100%;height:150px}
-</style>
-
-<script>
-function playSong(name, preview){
-    fetch('/track_play',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    });
-
-    let player = document.getElementById("player");
-
-    if(preview){
-        player.src = preview;
-        player.play();
-    }else{
-        window.open("https://youtube.com/results?search_query="+name);
-    }
-}
-
-function likeSong(name){
-    fetch('/like',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:name})
-    }).then(()=>alert("Liked!"));
-}
-</script>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-<div class="header">
-<h2>🎧 Music App</h2>
-<div>
-<a href="/liked" style="color:white;">❤️ Liked</a> |
-<a href="/logout" style="color:white;">Logout</a>
-</div>
+<div class="sidebar">
+    <h2>🎵 Music</h2>
+    <a href="/">Home</a>
+    <a href="/liked">❤️ Liked</a>
+    <a href="/logout">Logout</a>
 </div>
 
-<form method="POST">
-<input name="song" placeholder="Search song">
-<button>Recommend</button>
+<div class="main">
+
+<h1>Music Recommender</h1>
+
+<form method="POST" class="search">
+    <input name="song" placeholder="Search song..." required>
+    <button>Search</button>
 </form>
 
-<h3>Recommended</h3>
-<div class="grid">
-{% for s in recommendations %}
+<h2>Recommended</h2>
+<div class="row">
+{% for s in recs %}
 <div class="card">
 <img src="{{s.image}}">
-<p>{{s.name}}</p>
+<h3>{{s.name}}</h3>
 <p>{{s.artist}}</p>
-
-<button onclick="playSong('{{s.name}}','{{s.preview}}')">▶ Play</button>
-<button onclick="likeSong('{{s.name}}')">❤️ Like</button>
+<button onclick="play('{{s.name}}','{{s.preview}}')">▶</button>
+<button onclick="like('{{s.name}}')">❤️</button>
 </div>
 {% endfor %}
 </div>
 
-<h3>Recently Played</h3>
-<ul>
+<h2>Recently Played</h2>
+<div class="row">
 {% for h in history %}
-<li>{{h[0]}} - {{h[1]}}</li>
+<div class="small-card">{{h[0]}} - {{h[1]}}</div>
 {% endfor %}
-</ul>
+</div>
 
-<h3>🔥 Trending</h3>
-<ul>
+<h2>Trending</h2>
+<div class="row">
 {% for t in trending %}
-<li>{{t}}</li>
+<div class="small-card">{{t}}</div>
 {% endfor %}
-</ul>
-
-<h3>🤖 AI Recommendations</h3>
-<ul>
-{% for a in ai_recs %}
-<li>{{a}}</li>
-{% endfor %}
-</ul>
+</div>
 
 <audio id="player" controls></audio>
+
+</div>
+
+<script src="/static/script.js"></script>
 
 </body>
 </html>
