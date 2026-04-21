@@ -69,27 +69,27 @@ def get_recommendations(song_title):
 
 # ================== SAVE HISTORY ==================
 def save_history(username, song_name, action):
-    try:
-        print("👉 Saving:", username, song_name)
+    print("👉 Saving:", username, song_name)
 
-        row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
+    # ✅ Flexible matching (IMPORTANT FIX)
+    row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
 
-        if row.empty:
-            print("❌ Song not found in dataset")
-            return
+    if row.empty:
+        print("❌ Song not found in dataset")
+        return
 
-        row = row.iloc[0]
+    row = row.iloc[0]
 
-        cursor.execute(
-            "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
-            (username, row['track_name'], row['artist_name'], action)
-        )
-        db.commit()
+    print("🎯 Matched:", row['track_name'])
 
-        print("✅ Inserted into DB")
+    cursor.execute(
+        "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
+        (username, row['track_name'], row['artist_name'], action)
+    )
 
-    except Exception as e:
-        print("❌ Error:", e)
+    db.commit()
+
+    print("✅ Inserted into DB")
 
 # ================== USER HISTORY ==================
 def get_user_history(username):
