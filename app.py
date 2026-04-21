@@ -41,7 +41,7 @@ def get_song_data(song, artist):
         pass
     return "https://via.placeholder.com/300", ""
 
-# ================== RECOMMEND ==================
+# ================== CONTENT RECOMMEND ==================
 def get_recommendations(song_title):
     matches = data[data['track_name'].str.lower().str.contains(song_title.lower(), na=False)]
 
@@ -71,16 +71,13 @@ def get_recommendations(song_title):
 def save_history(username, song_name, action):
     print("👉 Saving:", username, song_name)
 
-    # ✅ Flexible matching (IMPORTANT FIX)
     row = data[data['track_name'].str.lower().str.contains(song_name.lower(), na=False)]
 
     if row.empty:
-        print("❌ Song not found in dataset")
+        print("❌ Song not found")
         return
 
     row = row.iloc[0]
-
-    print("🎯 Matched:", row['track_name'])
 
     cursor.execute(
         "INSERT INTO user_history (username, track_name, artist_name, action) VALUES (%s,%s,%s,%s)",
@@ -88,7 +85,6 @@ def save_history(username, song_name, action):
     )
 
     db.commit()
-
     print("✅ Inserted into DB")
 
 # ================== USER HISTORY ==================
@@ -116,7 +112,10 @@ def recommend_for_user(username):
             if r['name'] in seen:
                 continue
 
+            # 🔥 Smart scoring
             if action == "like":
+                r['score'] += 20
+            elif action == "play":
                 r['score'] += 10
 
             seen.add(r['name'])
@@ -132,6 +131,17 @@ def get_recently_played(username):
         "SELECT track_name FROM user_history WHERE username=%s ORDER BY id DESC LIMIT 5",
         (username,)
     )
+    return [row[0] for row in cursor.fetchall()]
+
+# ================== TRENDING ==================
+def get_trending():
+    cursor.execute("""
+        SELECT track_name, COUNT(*) as count 
+        FROM user_history 
+        GROUP BY track_name 
+        ORDER BY count DESC 
+        LIMIT 8
+    """)
     return [row[0] for row in cursor.fetchall()]
 
 # ================== REGISTER ==================
@@ -167,7 +177,7 @@ def login():
 
         if user:
             session['user'] = username
-            session.permanent = True   # 🔥 FIXED
+            session.permanent = True
             return redirect('/')
         else:
             error = "Invalid credentials"
@@ -184,12 +194,10 @@ def logout():
 @app.route('/like', methods=['POST'])
 def like():
     user = session.get('user')
-    data = request.get_json()
+    data_req = request.get_json()
 
-    print("❤️ Like called:", user, data)
-
-    if user and data:
-        save_history(user, data.get('song'), "like")
+    if user and data_req:
+        save_history(user, data_req.get('song'), "like")
 
     return jsonify({"status":"ok"})
 
@@ -199,16 +207,13 @@ def track_play():
     print("🔥 track_play called")
 
     user = session.get('user')
-    data = request.get_json()
+    data_req = request.get_json()
 
     print("User:", user)
-    print("Data:", data)
+    print("Data:", data_req)
 
-    if user and data:
-        save_history(user, data.get('song'), "play")
-        print("✅ Saved")
-    else:
-        print("❌ Not saved")
+    if user and data_req:
+        save_history(user, data_req.get('song'), "play")
 
     return jsonify({"status":"ok"})
 
@@ -232,6 +237,7 @@ def home():
 
     recommendations = recommend_for_user(user)
     recent = get_recently_played(user)
+    trending = get_trending()
     top_songs = data['track_name'].value_counts().head(10).index.tolist()
 
     if request.method == 'POST':
@@ -240,7 +246,8 @@ def home():
     return render_template('index.html',
                            recommendations=recommendations,
                            top_songs=top_songs,
-                           recent=recent)
+                           recent=recent,
+                           trending=trending)
 
 # ================== RUN ==================
 if __name__ == '__main__':
