@@ -1,213 +1,52 @@
-/* ================= ROOT THEME ================= */
-:root {
-    --bg: linear-gradient(135deg, #1e3c48, #2a6f77);
-    --card: rgba(255,255,255,0.08);
-    --text: white;
-    --accent: #1db954;
+body{
+margin:0;
+font-family:sans-serif;
+background:#1e3c48;
+color:white;
 }
 
-.light-mode {
-    --bg: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-    --card: rgba(0,0,0,0.08);
-    --text: #111;
-    --accent: #1db954;
+.sidebar{
+position:fixed;
+width:200px;
+height:100%;
+background:#111;
+padding:20px;
 }
 
-/* ================= BODY ================= */
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+.main{
+margin-left:220px;
+padding:20px;
 }
 
-/* ================= SIDEBAR ================= */
-.sidebar {
-    position: fixed;
-    width: 220px;
-    height: 100vh;
-    background: #0b1a1f;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+.search-bar{
+display:flex;
+gap:10px;
 }
 
-.sidebar h2 {
-    margin-bottom: 30px;
+.row{
+display:flex;
+overflow-x:auto;
+gap:20px;
 }
 
-.sidebar a {
-    text-decoration: none;
-    color: white;
-    margin: 12px 0;
-    font-size: 18px;
-    transition: 0.3s;
+.card{
+background:#222;
+padding:10px;
+border-radius:10px;
+min-width:150px;
 }
 
-.sidebar a:hover {
-    color: var(--accent);
+.card img{
+width:100%;
+height:150px;
+object-fit:cover;
 }
 
-/* DARK/LIGHT BUTTON */
-.mode-toggle {
-    margin-bottom: 20px;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    background: var(--accent);
-    color: white;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.mode-toggle:hover {
-    transform: scale(1.1);
-}
-
-/* ================= MAIN ================= */
-.main {
-    margin-left: 240px;
-    padding: 30px;
-    min-height: 100vh;
-}
-
-/* ================= SEARCH BAR ================= */
-.search-bar {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 40px;
-}
-
-.search-bar input {
-    width: 400px;
-    padding: 15px;
-    border-radius: 50px;
-    border: none;
-    outline: none;
-    background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(10px);
-    color: var(--text);
-    font-size: 16px;
-}
-
-.search-bar button {
-    margin-left: 10px;
-    padding: 15px 25px;
-    border-radius: 50px;
-    border: none;
-    background: var(--accent);
-    color: white;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.search-bar button:hover {
-    transform: scale(1.05);
-    background: #1ed760;
-}
-
-/* ================= SECTION ================= */
-.section {
-    margin-top: 40px;
-}
-
-.section h2 {
-    margin-bottom: 15px;
-}
-
-/* ================= SCROLL ================= */
-.scroll-container {
-    display: flex;
-    overflow-x: auto;
-    gap: 20px;
-    padding-bottom: 15px;
-}
-
-.scroll-container::-webkit-scrollbar {
-    height: 6px;
-}
-
-.scroll-container::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 10px;
-}
-
-/* ================= CARD ================= */
-.card {
-    min-width: 180px;
-    background: var(--card);
-    border-radius: 15px;
-    padding: 15px;
-    transition: 0.3s;
-}
-
-.card:hover {
-    transform: scale(1.08);
-}
-
-/* IMAGE FIX */
-.card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 10px;
-}
-
-/* ================= BUTTONS ================= */
-button {
-    margin-top: 10px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    background: var(--accent);
-    color: white;
-    transition: 0.3s;
-}
-
-button:hover {
-    transform: scale(1.1);
-}
-
-/* LIKE BUTTON */
-.like {
-    background: #ff4d6d;
-}
-
-/* ACTION ROW */
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-/* ================= PLAYER ================= */
-.player {
-    position: fixed;
-    bottom: 0;
-    left: 240px;
-    right: 0;
-    background: #111;
-    padding: 10px;
-}
-
-/* ================= WAVEFORM ================= */
-#wave {
-    width: 100%;
-    height: 60px;
-    margin-top: 5px;
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 180px;
-    }
-
-    .main {
-        margin-left: 200px;
-    }
-
-    .search-bar input {
-        width: 250px;
-    }
+.player{
+position:fixed;
+bottom:0;
+left:220px;
+right:0;
+background:#000;
+padding:10px;
 }
