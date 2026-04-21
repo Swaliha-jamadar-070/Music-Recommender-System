@@ -6,149 +6,52 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
 <style>
-*{ transition:all 0.2s ease; box-sizing:border-box; }
-
-body{
-    font-family:'Poppins',sans-serif;
-    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    color:white;
-    margin:0;
-    padding-bottom:100px;
-}
-
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:20px 40px;
-    background:rgba(0,0,0,0.7);
-}
-
-.hero{ text-align:center; padding:60px 20px 40px; }
-
-input{
-    padding:14px;
-    width:320px;
-    border-radius:25px;
-    border:none;
-    background:#1c1c1c;
-    color:white;
-}
-
-button{
-    padding:10px;
-    border-radius:20px;
-    border:none;
-    background:#2a2a2a;
-    color:#ccc;
-    cursor:pointer;
-}
-
-.section{ padding:30px 40px; }
-
-.popular-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-    gap:25px;
-}
-
-.card{
-    background:#1c1c1c;
-    padding:15px;
-    border-radius:15px;
-}
-
-.cover{
-    width:100%;
-    height:200px;
-    object-fit:cover;
-}
-
-.music-player{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:#111;
-    padding:10px;
-}
+body{font-family:Poppins;background:#0f2027;color:white;margin:0;padding-bottom:100px;}
+.header{display:flex;justify-content:space-between;padding:20px;background:#000;}
+.section{padding:20px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;}
+.card{background:#1c1c1c;padding:15px;border-radius:10px;}
+.cover{width:100%;height:200px;object-fit:cover;}
+.music-player{position:fixed;bottom:0;width:100%;background:#111;padding:10px;}
 </style>
 
 <script>
+function playSong(btn){
+    let preview = btn.dataset.preview;
+    let name = btn.dataset.name;
+    let artist = btn.dataset.artist;
 
-// 🔍 SEARCH
-async function searchSongs(){
-    let query = document.getElementById("songInput").value;
-
-    if(query.length < 1){
-        document.getElementById("suggestions").innerHTML = "";
-        return;
-    }
-
-    let res = await fetch(`/search?q=${query}`);
-    let data = await res.json();
-
-    let list = document.getElementById("suggestions");
-    list.innerHTML = "";
-
-    data.forEach(song=>{
-        let li=document.createElement("li");
-        li.innerText=song;
-        li.onclick=()=>{
-            document.getElementById("songInput").value=song;
-            list.innerHTML="";
-        };
-        list.appendChild(li);
-    });
-}
-
-// ❤️ LIKE
-function likeSong(song){
-    console.log("❤️ Like clicked:", song);
-
-    fetch('/like',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({song:song})
-    })
-    .then(res=>res.json())
-    .then(data=>console.log("✅ LIKE API:", data))
-    .catch(err=>console.log("❌ ERROR:", err));
-}
-
-// ▶ PLAY (FIXED)
-function playSong(preview, name, artist){
-
-    console.log("🔥 FUNCTION CALLED");
     console.log("🎵 Playing:", name);
 
-    // 🔥 SEND TO BACKEND
     fetch('/track_play',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({song:name})
-    })
-    .then(res => res.json())
-    .then(data => console.log("✅ PLAY API:", data))
-    .catch(err => console.log("❌ ERROR:", err));
+    });
 
     let player = document.getElementById("player");
     let now = document.getElementById("nowPlaying");
 
-    if(preview && preview !== "None"){
+    if(preview){
         player.src = preview;
         player.play();
-        now.innerText = "🎶 Now Playing: " + name;
+        now.innerText = "Now Playing: " + name;
     }else{
-        window.open(`https://www.youtube.com/results?search_query=${name} ${artist}`, "_blank");
+        window.open(`https://youtube.com/results?search_query=${name} ${artist}`);
     }
 }
 
+function likeSong(btn){
+    let name = btn.dataset.name;
+
+    fetch('/like',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({song:name})
+    });
+
+    console.log("❤️ liked:", name);
+}
 </script>
 
 </head>
@@ -156,86 +59,47 @@ function playSong(preview, name, artist){
 <body>
 
 <div class="header">
-    <h1>🎧 Music Recommender</h1>
-    <a href="/logout">Logout</a>
+<h2>🎧 Music Recommender</h2>
+<a href="/logout">Logout</a>
 </div>
 
-<div class="hero">
-    <h2>Discover Music 🎶</h2>
-
-    <form method="POST">
-        <input id="songInput" name="song" onkeyup="searchSongs()" placeholder="Search song..." required>
-        <button type="submit">Recommend</button>
-    </form>
-
-    <ul id="suggestions"></ul>
-</div>
-
-<!-- 🔥 POPULAR -->
 <div class="section">
-<h2>🔥 Popular Songs</h2>
-<div class="popular-grid">
-{% for s in top_songs %}
-<div onclick="document.getElementById('songInput').value='{{ s }}'">
-🎵 {{ s }}
-</div>
-{% endfor %}
-</div>
+<form method="POST">
+<input name="song" placeholder="Search song..." required>
+<button>Recommend</button>
+</form>
 </div>
 
-<!-- 📊 HISTORY -->
 <div class="section">
-<h2>📊 Your Activity</h2>
-<div class="popular-grid">
-{% for h in history %}
-<div class="card">
-    🎵 {{ h[0] }} <br>
-    <small>{{ h[1] }} ({{ h[2] }})</small>
-</div>
-{% endfor %}
-</div>
-</div>
-
-<!-- 🔥 TRENDING -->
-<div class="section">
-<h2>🔥 Trending Now</h2>
-<div class="popular-grid">
-{% for t in trending %}
-<div>🔥 {{ t }}</div>
-{% endfor %}
-</div>
-</div>
-
-<!-- 🎯 RECOMMEND -->
-{% if recommendations %}
-<div class="section">
-<h2>✨ Recommended Songs</h2>
-
+<h3>✨ Recommended</h3>
 <div class="grid">
 {% for song in recommendations %}
 <div class="card">
-
 <img src="{{ song.image }}" class="cover">
-
 <h3>{{ song.name }}</h3>
 <p>{{ song.artist }}</p>
 
-<!-- ✅ FIXED BUTTONS -->
-<button onclick="playSong('{{ song.preview }}','{{ song.name }}','{{ song.artist }}')">
+<button 
+onclick="playSong(this)"
+data-preview="{{ song.preview }}"
+data-name="{{ song.name }}"
+data-artist="{{ song.artist }}">
 ▶ Play
 </button>
 
-<button onclick="likeSong('{{ song.name }}')">❤️</button>
+<button 
+onclick="likeSong(this)"
+data-name="{{ song.name }}">
+❤️
+</button>
 
 </div>
 {% endfor %}
 </div>
 </div>
-{% endif %}
 
-<!-- PLAYER -->
 <div class="music-player">
-<p id="nowPlaying">No song playing</p>
+<p id="nowPlaying">No song</p>
 <audio id="player" controls></audio>
 </div>
 
