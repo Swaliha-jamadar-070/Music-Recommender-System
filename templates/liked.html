@@ -1,27 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Liked</title>
-<link rel="stylesheet" href="/static/style.css">
+    <title>Liked Songs ❤️</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
+<div class="sidebar">
+    <h2>🎧 Music AI</h2>
+    <a href="/">🏠 Home</a>
+    <a href="/liked">❤️ Liked</a>
+    <a href="/logout">🚪 Logout</a>
+</div>
+
 <div class="main">
-<h1>❤️ Liked Songs</h1>
+<h1>❤️ Your Liked Songs</h1>
 
 <div class="scroll-container">
 {% for s in songs %}
-<div class="card">
+<div class="card" onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">
 <img src="{{s.image}}">
-<h4>{{s.name}}</h4>
+<h3>{{s.name}}</h3>
 <p>{{s.artist}}</p>
-<button onclick="play('{{s.name}}','{{s.preview}}','{{s.artist}}')">▶</button>
 </div>
 {% endfor %}
 </div>
 
-<a href="/">⬅ Back</a>
 </div>
 
 <script src="/static/script.js"></script>
